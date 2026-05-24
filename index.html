@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#155B67">
+<title>Admin · Diagnóstika Engenharia</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--teal:#155B67;--teal-dk:#0D3C44;--turq:#00B4AC;--lime:#8DB72A;--purple:#7D3C98;--amber:#D4A24C;--red:#C00000;--green:#1B8A4A;--text:#1A2E31;--text2:#4A6568;--gray:#F0F4F5;--gray2:#E0EAEC;--gray3:#A8BFC2;--gray4:#5A7A7E}
+html,body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:var(--text);font-size:14px;min-height:100vh}
+
+header{background:var(--teal);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.15);position:sticky;top:0;z-index:10}
+header img{height:34px;filter:brightness(0) invert(1)}
+header h1{font-size:18px;font-weight:700;flex:1}
+header a{color:#fff;text-decoration:none;font-size:12px;background:rgba(255,255,255,.15);padding:6px 12px;border-radius:6px}
+header a:hover{background:rgba(255,255,255,.25)}
+
+main{padding:18px;max-width:1400px;margin:0 auto}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid var(--teal)}
+.stat.s-mc{border-left-color:#155B67}
+.stat.s-mm{border-left-color:#00B4AC}
+.stat.s-pp{border-left-color:#8DB72A}
+.stat.s-sc{border-left-color:#7D3C98}
+.stat.s-jm{border-left-color:#D4A24C}
+.stat.s-total{border-left-color:#1B8A4A;background:linear-gradient(135deg,rgba(27,138,74,.06),#fff)}
+.stat-num{font-size:26px;font-weight:800;color:var(--text);line-height:1.1}
+.stat-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.stat-sub{font-size:11px;color:var(--gray4);margin-top:3px}
+
+.toolbar{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.toolbar select,.toolbar input{padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;font-family:inherit}
+.toolbar button{padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;font-size:12px}
+.toolbar button:hover{background:var(--teal-dk)}
+.toolbar .badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;background:var(--gray);color:var(--text2)}
+.toolbar .badge.live{background:rgba(27,138,74,.15);color:var(--green)}
+
+table{width:100%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);border-collapse:collapse}
+th{background:var(--teal);color:#fff;padding:11px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+td{padding:11px 12px;border-top:1px solid var(--gray2);font-size:13px;vertical-align:middle}
+tr.row-click{cursor:pointer;transition:background .15s}
+tr.row-click:hover{background:var(--gray)}
+.pill{display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.p-mc{background:rgba(21,91,103,.12);color:#155B67}
+.p-mm{background:rgba(0,180,172,.15);color:#008A83}
+.p-pp{background:rgba(141,183,42,.18);color:#6a8a1e}
+.p-sc{background:rgba(125,60,152,.15);color:#7D3C98}
+.p-jm{background:rgba(212,162,76,.2);color:#A87826}
+.p-nc{background:rgba(192,0,0,.12);color:var(--red)}
+.p-ok{background:rgba(27,138,74,.12);color:var(--green)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--gray4)}
+.empty h3{font-size:18px;margin-bottom:8px;color:var(--text2)}
+
+.loading{text-align:center;padding:40px;color:var(--text2);font-size:13px}
+
+/* Modal detalhes */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--gray4);line-height:1}
+.modal h2{font-size:20px;color:var(--teal);margin-bottom:4px}
+.modal .sub{font-size:13px;color:var(--text2);margin-bottom:18px}
+.modal-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.modal-stat{text-align:center;padding:14px 8px;border-radius:8px;border:1.5px solid var(--gray2)}
+.ms-c{border-color:var(--green);background:rgba(27,138,74,.06)}
+.ms-n{border-color:var(--red);background:rgba(192,0,0,.06)}
+.ms-a{border-color:var(--gray3);background:var(--gray)}
+.modal-stat big{display:block;font-size:24px;font-weight:800}
+.modal-stat small{font-size:10px;text-transform:uppercase;color:var(--text2);letter-spacing:.3px}
+.modal h3{font-size:13px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--gray2)}
+.item-list{display:flex;flex-direction:column;gap:8px}
+.item{padding:10px 12px;background:var(--gray);border-radius:6px;border-left:3px solid var(--gray3)}
+.item.is-c{border-left-color:var(--green);background:rgba(27,138,74,.05)}
+.item.is-n{border-left-color:var(--red);background:rgba(192,0,0,.05)}
+.item-name{font-weight:600;font-size:13px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item-obs{font-size:11.5px;color:var(--text2);line-height:1.5;margin-top:4px;font-style:italic}
+.item-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:8px}
+.item-fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+
+.foto-zoom{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+.foto-zoom img{max-width:100%;max-height:100%;object-fit:contain}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo-dark.png" alt="Diagnóstika">
+  <h1>Painel Admin · Diagnóstika</h1>
+  <a href="https://diagnostika-engenharia.github.io/">← Portal</a>
+  <a href="https://diagnostika-engenharia.github.io/pmp/">App PMP →</a>
+</header>
+
+<main>
+  <div class="stats" id="stats"><div class="stat"><div class="stat-label">Carregando…</div></div></div>
+
+  <div class="toolbar">
+    <span class="badge live" id="conn-badge">⏳ Conectando ao Supabase…</span>
+    <select id="filtro-condo"><option value="">Todos condomínios</option></select>
+    <input type="text" id="filtro-busca" placeholder="🔍 Buscar engenheiro/data..." style="flex:1;min-width:160px">
+    <button onclick="recarregar()">🔄 Atualizar</button>
+  </div>
+
+  <table id="tabela">
+    <thead><tr><th>Data</th><th>Condomínio</th><th>Engenheiro</th><th style="text-align:center">Itens</th><th style="text-align:center">Status</th><th>Última atualização</th></tr></thead>
+    <tbody id="tbody"><tr><td colspan="6" class="loading">Carregando visitas…</td></tr></tbody>
+  </table>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://fimmjgdwhifsrrbreche.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpbW1qZ2R3aGlmc3JyYnJlY2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NzU2NDIsImV4cCI6MjA5NTE1MTY0Mn0.eAmMS95M8BkfX3NCcOtHnhKWXy0jkvXwSGEoqv_Q21Q';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+
+const CONDOS={
+  'monte-carlo':{nome:'Monte Carlo',cls:'mc',cor:'#155B67'},
+  'morada-morumbi':{nome:'Morada Morumbi',cls:'mm',cor:'#00B4AC'},
+  'portal-primavera':{nome:'Portal Primavera',cls:'pp',cor:'#8DB72A'},
+  'residencial-santa-clara':{nome:'Santa Clara',cls:'sc',cor:'#7D3C98'},
+  'jardins-do-malta':{nome:'Jardins do Malta',cls:'jm',cor:'#D4A24C'}
+};
+
+let allVisitas=[];
+
+async function carregar(){
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='<tr><td colspan="6" class="loading">Carregando visitas…</td></tr>';
+  try{
+    const {data,error}=await sb.from('visitas').select('*').order('data',{ascending:false}).order('created_at',{ascending:false}).limit(500);
+    if(error) throw error;
+    allVisitas=data||[];
+    document.getElementById('conn-badge').textContent='● Conectado · '+allVisitas.length+' visitas no banco';
+    document.getElementById('conn-badge').classList.add('live');
+    renderStats();
+    popularFiltro();
+    renderTabela();
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="6" class="loading" style="color:#C00000">❌ Erro: '+e.message+'</td></tr>';
+    document.getElementById('conn-badge').textContent='❌ Erro: '+e.message;
+  }
+}
+
+function renderStats(){
+  const total=allVisitas.length;
+  const porCondo={};
+  Object.keys(CONDOS).forEach(k=>porCondo[k]=0);
+  allVisitas.forEach(v=>{ if(porCondo[v.condo_id]!==undefined) porCondo[v.condo_id]++; });
+  const totalNC=allVisitas.reduce((s,v)=>s+Object.values(v.itens||{}).filter(i=>i.status==='nao_conforme').length,0);
+  const stats=document.getElementById('stats');
+  stats.innerHTML=`
+    <div class="stat s-total"><div class="stat-num">${total}</div><div class="stat-label">Total de visitas</div><div class="stat-sub">${totalNC} NC acumuladas</div></div>
+    ${Object.entries(porCondo).map(([k,n])=>{
+      const c=CONDOS[k];
+      return `<div class="stat s-${c.cls}"><div class="stat-num">${n}</div><div class="stat-label">${c.nome}</div></div>`;
+    }).join('')}`;
+}
+
+function popularFiltro(){
+  const f=document.getElementById('filtro-condo');
+  const opcs=Object.keys(CONDOS).map(k=>`<option value="${k}">${CONDOS[k].nome}</option>`).join('');
+  f.innerHTML='<option value="">Todos condomínios</option>'+opcs;
+}
+
+function renderTabela(){
+  const tbody=document.getElementById('tbody');
+  const fCondo=document.getElementById('filtro-condo').value;
+  const fBusca=document.getElementById('filtro-busca').value.toLowerCase().trim();
+  let v=allVisitas;
+  if(fCondo) v=v.filter(x=>x.condo_id===fCondo);
+  if(fBusca) v=v.filter(x=>(x.engenheiro||'').toLowerCase().includes(fBusca)||(x.data||'').includes(fBusca)||(x.representante||'').toLowerCase().includes(fBusca));
+  if(!v.length){ tbody.innerHTML='<tr><td colspan="6" class="empty"><h3>Nenhuma visita encontrada</h3><p>Quando o engenheiro salvar visitas no app PMP, elas aparecem aqui automaticamente.</p></td></tr>'; return; }
+  tbody.innerHTML=v.map(x=>{
+    const c=CONDOS[x.condo_id]||{nome:x.condo_id,cls:'mc'};
+    const itens=Object.values(x.itens||{});
+    const conf=itens.filter(i=>i.status==='conforme').length;
+    const nc=itens.filter(i=>i.status==='nao_conforme').length;
+    const na=itens.filter(i=>i.status==='na').length;
+    const status=nc>0?`<span class="pill p-nc">${nc} NC</span>`:`<span class="pill p-ok">✓ OK</span>`;
+    const upd=x.updated_at?new Date(x.updated_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    return `<tr class="row-click" onclick="abrirDetalhes('${x.id}')">
+      <td><b>${x.data}</b>${x.hora?'<br><small style="color:#5A7A7E">'+x.hora+'</small>':''}</td>
+      <td><span class="pill p-${c.cls}">${c.nome}</span></td>
+      <td>${x.engenheiro||'—'}${x.representante?'<br><small style="color:#5A7A7E">'+x.representante+'</small>':''}</td>
+      <td style="text-align:center">${conf}/${itens.length} <small style="color:#5A7A7E">(${na} N/A)</small></td>
+      <td style="text-align:center">${status}</td>
+      <td><small>${upd}</small></td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirDetalhes(id){
+  const v=allVisitas.find(x=>x.id===id);
+  if(!v) return;
+  const c=CONDOS[v.condo_id]||{nome:v.condo_id};
+  const itens=Object.entries(v.itens||{});
+  const conf=itens.filter(([_,i])=>i.status==='conforme').length;
+  const nc=itens.filter(([_,i])=>i.status==='nao_conforme').length;
+  const na=itens.filter(([_,i])=>i.status==='na').length;
+  const ov=document.createElement('div');
+  ov.className='modal-overlay';
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  ov.innerHTML=`
+    <div class="modal">
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      <h2>${c.nome}</h2>
+      <div class="sub">📅 ${v.data} ${v.hora||''} · 👷 ${v.engenheiro||'—'} · 🏢 ${v.representante||'—'}</div>
+      <div class="modal-stats">
+        <div class="modal-stat ms-c"><big>${conf}</big><small>Conformes</small></div>
+        <div class="modal-stat ms-n"><big>${nc}</big><small>Não Conformes</small></div>
+        <div class="modal-stat ms-a"><big>${na}</big><small>N/A</small></div>
+      </div>
+      ${v.obs_geral?`<h3>Observações gerais</h3><div style="background:var(--gray);padding:10px 12px;border-radius:6px;font-size:13px;line-height:1.5;white-space:pre-wrap">${v.obs_geral}</div>`:''}
+      <h3>Checklist (${itens.length} itens)</h3>
+      <div class="item-list">
+        ${itens.map(([id,i])=>{
+          const sCls=i.status==='conforme'?'is-c':i.status==='nao_conforme'?'is-n':'';
+          const sLabel=i.status==='conforme'?'✓ Conforme':i.status==='nao_conforme'?'✗ Não Conforme':i.status==='na'?'— N/A':'—';
+          const fotos=i.fotos||[];
+          return `<div class="item ${sCls}">
+            <div class="item-name"><span>${id.toUpperCase()}</span><small style="color:var(--text2)">${sLabel}</small></div>
+            ${i.obs?`<div class="item-obs">"${i.obs}"</div>`:''}
+            ${fotos.length?`<div class="item-fotos">${fotos.map((f,k)=>{
+              const url=typeof f==='string'?f:f.url;
+              const ts=typeof f==='object'&&f.timestamp?'<div style=\"font-size:9px;color:var(--gray4);margin-top:2px\">🕒 '+new Date(f.timestamp).toLocaleString('pt-BR')+'</div>':'';
+              return `<div><img src="${url}" onclick="ampliarFoto(this.src)" alt="">${ts}</div>`;
+            }).join('')}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+}
+
+function ampliarFoto(src){
+  const z=document.createElement('div');
+  z.className='foto-zoom';
+  z.onclick=()=>z.remove();
+  z.innerHTML='<img src="'+src+'">';
+  document.body.appendChild(z);
+}
+
+function recarregar(){ carregar(); }
+document.getElementById('filtro-condo').addEventListener('change',renderTabela);
+document.getElementById('filtro-busca').addEventListener('input',renderTabela);
+
+carregar();
+
+// Atualização automática a cada 30 segundos
+setInterval(carregar,30000);
+</script>
+</body>
+</html>
