@@ -96,6 +96,7 @@ tr.row-click:hover{background:var(--gray)}
   <div style="display:flex;gap:6px;background:#fff;border-radius:10px;padding:5px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
     <button onclick="trocarSecao('visitas')" id="sec-tab-visitas" class="sec-tab" style="flex:1;padding:11px;border:none;background:var(--teal);color:#fff;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">📋 Visitas</button>
     <button onclick="trocarSecao('demandas')" id="sec-tab-demandas" class="sec-tab" style="flex:1;padding:11px;border:none;background:transparent;color:var(--text2);border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">💬 Demandas <span id="dem-pendentes" style="background:var(--red);color:#fff;font-size:10px;padding:1px 7px;border-radius:8px;margin-left:4px;display:none"></span></button>
+    <button onclick="trocarSecao('agenda')" id="sec-tab-agenda" class="sec-tab" style="flex:1;padding:11px;border:none;background:transparent;color:var(--text2);border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">📅 Agenda</button>
   </div>
 
   <div id="sec-visitas">
@@ -138,6 +139,18 @@ tr.row-click:hover{background:var(--gray)}
       <button onclick="carregarDemandas()" style="padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;font-size:12px">🔄 Atualizar</button>
     </div>
     <div id="demandas-grid"></div>
+  </div>
+
+  <div id="sec-agenda" style="display:none">
+    <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div style="font-weight:700;font-size:14px;color:var(--text)">📅 Agenda dos Condomínios</div>
+      <select id="agd-filtro-condo" onchange="renderAgendaAdm()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:180px">
+        <option value="">Selecione um condomínio…</option>
+      </select>
+      <button onclick="abrirModalNovoEvento()" id="btn-novo-evt" style="padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;font-size:12px;display:none">➕ Novo evento</button>
+      <button onclick="carregarAgendaAdm()" style="padding:7px 14px;border:none;border-radius:6px;background:#fff;color:var(--text2);font-weight:700;cursor:pointer;font-size:12px;border:1px solid var(--gray2)">🔄 Atualizar</button>
+    </div>
+    <div id="agenda-lista"><div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio para ver e gerenciar a agenda</div></div>
   </div>
 </main>
 
@@ -213,13 +226,164 @@ let allVisitas=[];
 let allDemandas=[];
 
 function trocarSecao(s){
-  document.getElementById('sec-visitas').style.display=s==='visitas'?'block':'none';
-  document.getElementById('sec-demandas').style.display=s==='demandas'?'block':'none';
-  document.getElementById('sec-tab-visitas').style.background=s==='visitas'?'var(--teal)':'transparent';
-  document.getElementById('sec-tab-visitas').style.color=s==='visitas'?'#fff':'var(--text2)';
-  document.getElementById('sec-tab-demandas').style.background=s==='demandas'?'var(--teal)':'transparent';
-  document.getElementById('sec-tab-demandas').style.color=s==='demandas'?'#fff':'var(--text2)';
+  ['visitas','demandas','agenda'].forEach(t=>{
+    document.getElementById('sec-'+t).style.display=s===t?'block':'none';
+    const tab=document.getElementById('sec-tab-'+t);
+    if(tab){ tab.style.background=s===t?'var(--teal)':'transparent'; tab.style.color=s===t?'#fff':'var(--text2)'; }
+  });
   if(s==='demandas') carregarDemandas();
+  if(s==='agenda') inicializarAgendaAdm();
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// AGENDA — gestão de eventos por condomínio
+// ════════════════════════════════════════════════════════════════════════
+let _agendaCondo=null, _eventosCondo=[];
+
+function inicializarAgendaAdm(){
+  const sel=document.getElementById('agd-filtro-condo');
+  if(sel.options.length<=1){
+    sel.innerHTML='<option value="">Selecione um condomínio…</option>'+Object.entries(CONDOS).map(([k,c])=>`<option value="${k}">${c.nome}</option>`).join('');
+  }
+}
+
+async function carregarAgendaAdm(){
+  if(!_agendaCondo){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio</div>'; return; }
+  document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">⏳ Carregando…</div>';
+  const {data,error}=await sb.from('app_config').select('*').eq('key','eventos_'+_agendaCondo).maybeSingle();
+  if(error){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;color:var(--red);border-radius:10px">Erro: '+error.message+'</div>'; return; }
+  _eventosCondo=(data?.value||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  renderAgendaListaAdm();
+}
+
+async function renderAgendaAdm(){
+  const condoId=document.getElementById('agd-filtro-condo').value;
+  _agendaCondo=condoId||null;
+  document.getElementById('btn-novo-evt').style.display=_agendaCondo?'inline-block':'none';
+  if(!_agendaCondo){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio</div>'; return; }
+  await carregarAgendaAdm();
+}
+
+function renderAgendaListaAdm(){
+  const el=document.getElementById('agenda-lista');
+  const c=CONDOS[_agendaCondo]||{nome:_agendaCondo,cor:'#155B67'};
+  if(!_eventosCondo.length){
+    el.innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">Nenhum evento agendado em <b>'+c.nome+'</b><br><small>Use o botão <b>➕ Novo evento</b> acima para adicionar</small></div>';
+    return;
+  }
+  const tipos={ensaio:'🧪',laudo:'📋',inspeção:'🔍','inspeção especial':'🔍',perícia:'⚖️',obra:'🏗️',reunião:'👥',limpeza:'🧹',documental:'📑',outro:'📌',evento:'📌'};
+  const hoje=new Date().toISOString().slice(0,10);
+  el.innerHTML='<div style="background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
+    +'<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📅 '+c.nome+' — '+_eventosCondo.length+' evento(s)</div>'
+    +_eventosCondo.map(e=>{
+      const [y,mo,d]=(e.data||'').split('-').map(Number);
+      const dt=new Date(y,(mo||1)-1,d||1);
+      const passou=e.data<hoje;
+      const tipoIcon=tipos[(e.tipo||'').toLowerCase()]||'📌';
+      return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray2);${passou?'opacity:.6':''}">
+        <div style="text-align:center;width:50px;flex-shrink:0;background:${c.cor};color:#fff;border-radius:8px;padding:6px 4px">
+          <div style="font-size:18px;font-weight:800;line-height:1">${String(d||'').padStart(2,'0')}</div>
+          <div style="font-size:9px;text-transform:uppercase;margin-top:2px;opacity:.9">${['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][mo||0]}</div>
+          <div style="font-size:8px;margin-top:2px;opacity:.7">${y||''}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:14px;font-weight:700;color:var(--text)">${tipoIcon} ${e.titulo||'—'}</span>${passou?'<span style="font-size:9px;background:var(--green);color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">✓ realizado</span>':''}</div>
+          ${e.descricao?'<div style="font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4">'+e.descricao+'</div>':''}
+          <div style="font-size:10px;color:var(--gray4);margin-top:4px">${dt.toLocaleDateString('pt-BR',{weekday:'long'})} · tipo: <b>${e.tipo||'—'}</b></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button onclick="editarEventoAdm('${e.id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--teal);color:var(--teal);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✏️ Editar</button>
+          <button onclick="removerEventoAdm('${e.id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--red);color:var(--red);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🗑 Excluir</button>
+        </div>
+      </div>`;
+    }).join('')+'</div>';
+}
+
+function abrirModalNovoEvento(){ abrirModalEventoAdm(null); }
+function editarEventoAdm(id){
+  const e=_eventosCondo.find(x=>x.id===id);
+  if(!e){ alert('Evento não encontrado'); return; }
+  abrirModalEventoAdm(e);
+}
+
+function abrirModalEventoAdm(evento){
+  const isEdit=!!evento;
+  const c=CONDOS[_agendaCondo]||{nome:_agendaCondo,cor:'#155B67'};
+  const hoje=new Date().toISOString().slice(0,10);
+  const ov=document.createElement('div');
+  ov.className='modal-overlay';
+  ov.id='evt-modal';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="document.getElementById('evt-modal').remove()">×</button>
+    <h2>${isEdit?'✏️ Editar Evento':'➕ Novo Evento'}</h2>
+    <div class="sub" style="margin-bottom:14px">${c.nome}</div>
+
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:5px">Data *</label>
+    <input id="evt-data" type="date" value="${evento?.data||hoje}" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;margin-bottom:10px;font-family:inherit">
+
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:5px">Título *</label>
+    <input id="evt-titulo" type="text" value="${(evento?.titulo||'').replace(/"/g,'&quot;')}" placeholder="Ex: Ensaio de estanqueidade — Piscina" lang="pt-BR" spellcheck="true" autocapitalize="sentences" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;margin-bottom:10px;font-family:inherit">
+
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:5px">Tipo</label>
+    <select id="evt-tipo" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;margin-bottom:10px;font-family:inherit;background:#fff">
+      ${['ensaio','laudo','inspeção especial','perícia','obra','reunião','limpeza','documental','outro'].map(t=>`<option value="${t}" ${(evento?.tipo||'ensaio')===t?'selected':''}>${t}</option>`).join('')}
+    </select>
+
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:5px">Descrição (opcional)</label>
+    <textarea id="evt-desc" placeholder="Detalhes adicionais…" lang="pt-BR" spellcheck="true" autocapitalize="sentences" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:13px;min-height:80px;resize:vertical;font-family:inherit;margin-bottom:16px">${evento?.descricao||''}</textarea>
+
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('evt-modal').remove()" style="flex:0 0 auto;padding:11px 18px;border:1.5px solid var(--gray3);background:#fff;color:var(--text2);border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Cancelar</button>
+      <button id="btn-salvar-evt" onclick="salvarEventoAdm('${evento?.id||''}')" style="flex:1;padding:11px;border:none;background:${c.cor};color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">${isEdit?'💾 Salvar alterações':'✓ Criar evento'}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>document.getElementById('evt-titulo')?.focus(),100);
+}
+
+async function salvarEventoAdm(id){
+  const data=document.getElementById('evt-data').value;
+  const titulo=document.getElementById('evt-titulo').value.trim();
+  const tipo=document.getElementById('evt-tipo').value;
+  const descricao=document.getElementById('evt-desc').value.trim();
+  if(!data){ alert('Informe a data'); return; }
+  if(!titulo){ alert('Informe o título'); return; }
+  const btn=document.getElementById('btn-salvar-evt');
+  btn.disabled=true; btn.textContent='⏳ Salvando…';
+  try{
+    let lista=_eventosCondo.slice();
+    if(id){
+      const i=lista.findIndex(e=>e.id===id);
+      if(i>=0){
+        lista[i]={...lista[i],data,titulo,tipo,descricao,atualizadoEm:new Date().toISOString()};
+      } else throw new Error('Evento não encontrado');
+    } else {
+      lista.push({id:'evt_'+Date.now().toString(36),data,titulo,tipo,descricao,criadoEm:new Date().toISOString()});
+    }
+    lista.sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+    const {error}=await sb.from('app_config').upsert({key:'eventos_'+_agendaCondo,value:lista,updated_at:new Date().toISOString()},{onConflict:'key'});
+    if(error) throw error;
+    _eventosCondo=lista;
+    document.getElementById('evt-modal').remove();
+    renderAgendaListaAdm();
+  }catch(e){
+    alert('Erro: '+e.message);
+    btn.disabled=false; btn.textContent=id?'💾 Salvar alterações':'✓ Criar evento';
+  }
+}
+
+async function removerEventoAdm(id){
+  const e=_eventosCondo.find(x=>x.id===id);
+  if(!e) return;
+  if(!confirm('Remover o evento "'+e.titulo+'" do dia '+e.data+'?\n\nEsta ação não pode ser desfeita.')) return;
+  try{
+    const lista=_eventosCondo.filter(x=>x.id!==id);
+    const {error}=await sb.from('app_config').upsert({key:'eventos_'+_agendaCondo,value:lista,updated_at:new Date().toISOString()},{onConflict:'key'});
+    if(error) throw error;
+    _eventosCondo=lista;
+    renderAgendaListaAdm();
+  }catch(e){ alert('Erro: '+e.message); }
 }
 
 async function carregarDemandas(){
