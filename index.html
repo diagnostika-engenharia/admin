@@ -338,7 +338,7 @@ async function responderDemanda(id){
     ${d.resposta?'<div style="background:rgba(27,138,74,.06);border-left:3px solid var(--green);padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;font-size:12.5px"><b style="color:var(--green);font-size:11px;text-transform:uppercase;display:block;margin-bottom:4px">Resposta atual</b>'+d.resposta+'</div>':''}
 
     <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:6px">Resposta técnica</label>
-    <textarea id="resp-texto" style="width:100%;padding:12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;font-family:inherit;min-height:120px;resize:vertical;outline:none">${d.resposta||''}</textarea>
+    <textarea id="resp-texto" lang="pt-BR" spellcheck="true" autocorrect="on" autocapitalize="sentences" style="width:100%;padding:12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;font-family:inherit;min-height:120px;resize:vertical;outline:none">${d.resposta||''}</textarea>
 
     <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin:14px 0 6px">📎 Anexar Documentos / Fotos / Vídeos</label>
     <div style="background:#fff;border:1.5px dashed var(--gray2);border-radius:8px;padding:12px">
