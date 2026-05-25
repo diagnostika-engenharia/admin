@@ -179,9 +179,11 @@ function renderTabela(){
     const na=itens.filter(i=>i.status==='na').length;
     const status=nc>0?`<span class="pill p-nc">${nc} NC</span>`:`<span class="pill p-ok">✓ OK</span>`;
     const upd=x.updated_at?new Date(x.updated_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const tipoBadge = x.tipo==='reforma' ? '<span class="pill" style="background:rgba(123,31,162,.15);color:#7B1FA2;margin-left:4px">🏗️ Reforma</span>' : '';
+    const undInfo = x.tipo==='reforma' && (x.bloco||x.apartamento||x.morador) ? `<br><small style="color:#7B1FA2;font-weight:600">📍 ${[x.bloco&&'Bl '+x.bloco, x.apartamento&&'Ap '+x.apartamento, x.morador].filter(Boolean).join(' · ')}</small>` : '';
     return `<tr class="row-click" onclick="abrirDetalhes('${x.id}')">
       <td><b>${x.data}</b>${x.hora?'<br><small style="color:#5A7A7E">'+x.hora+'</small>':''}</td>
-      <td><span class="pill p-${c.cls}">${c.nome}</span></td>
+      <td><span class="pill p-${c.cls}">${c.nome}</span>${tipoBadge}${undInfo}</td>
       <td>${x.engenheiro||'—'}${x.representante?'<br><small style="color:#5A7A7E">'+x.representante+'</small>':''}</td>
       <td style="text-align:center">${conf}/${itens.length} <small style="color:#5A7A7E">(${na} N/A)</small></td>
       <td style="text-align:center">${status}</td>
@@ -204,8 +206,9 @@ function abrirDetalhes(id){
   ov.innerHTML=`
     <div class="modal">
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-      <h2>${c.nome}</h2>
+      <h2>${c.nome} ${v.tipo==='reforma'?'<span style="font-size:12px;background:#7B1FA2;color:#fff;padding:3px 9px;border-radius:10px;font-weight:600;margin-left:6px;vertical-align:middle">🏗️ REFORMA</span>':''}</h2>
       <div class="sub">📅 ${v.data} ${v.hora||''} · 👷 ${v.engenheiro||'—'} · 🏢 ${v.representante||'—'}</div>
+      ${v.tipo==='reforma' && (v.bloco||v.apartamento||v.morador)?`<div style="background:rgba(123,31,162,.07);border-left:3px solid #7B1FA2;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;font-size:12.5px"><b style="color:#7B1FA2">📍 Unidade:</b> ${[v.bloco&&'Bloco '+v.bloco, v.apartamento&&'Apto '+v.apartamento].filter(Boolean).join(' · ')}${v.morador?' · <b>👤 Morador(a):</b> '+v.morador:''}</div>`:''}
       <div class="modal-stats">
         <div class="modal-stat ms-c"><big>${conf}</big><small>Conformes</small></div>
         <div class="modal-stat ms-n"><big>${nc}</big><small>Não Conformes</small></div>
