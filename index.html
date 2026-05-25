@@ -282,10 +282,70 @@ function renderDemandas(){
         ${d.status==='aberta'?`<button onclick="mudarStatus('${d.id}','em_andamento')" style="background:#E65100;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">⏳ Iniciar atendimento</button>`:''}
         ${d.status!=='resolvida'?`<button onclick="mudarStatus('${d.id}','resolvida')" style="background:var(--green);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">✅ Marcar resolvida</button>`:''}
         ${d.status!=='fechada'?`<button onclick="mudarStatus('${d.id}','fechada')" style="background:var(--gray3);color:var(--text);border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">🔒 Fechar</button>`:''}
+        <button onclick="toggleHistoricoAdm('${d.id}')" style="background:transparent;border:1px solid var(--gray3);color:var(--text2);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">📜 Histórico</button>
         <button onclick="excluirDemanda('${d.id}')" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">🗑 Excluir</button>
+      </div>
+      <div id="hist-adm-${d.id}" style="display:none"></div>
+    </div>`;
+  }).join('');
+}
+
+let _histAdmCache={};
+async function toggleHistoricoAdm(id){
+  const box=document.getElementById('hist-adm-'+id);
+  if(!box) return;
+  if(box.style.display==='block'){ box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML='<div style="text-align:center;color:var(--text2);font-size:11px;padding:8px">⏳ Carregando histórico…</div>';
+  const {data,error}=await sb.from('demanda_historico').select('*').eq('demanda_id',id).order('quando',{ascending:true});
+  if(error){ box.innerHTML='<div style="color:var(--red);font-size:11px;padding:6px">Erro: '+error.message+'</div>'; return; }
+  box.innerHTML=renderTimelineHistoricoAdm(data||[]);
+}
+
+function renderTimelineHistoricoAdm(eventos){
+  if(!eventos.length) return '<div style="color:var(--text2);font-size:11px;padding:6px">Nenhum registro.</div>';
+  const labels={criada:'📋 Demanda aberta',editada:'✏️ Editada pelo síndico',respondida:'💬 Respondida pela Diagnóstika',resposta_editada:'💬 Resposta atualizada',status_alterado:'🔄 Status alterado'};
+  const statusLabels={aberta:'Aberta',em_andamento:'Em andamento',resolvida:'Resolvida',fechada:'Fechada'};
+  const linhas=eventos.map((e,i)=>{
+    const dt=new Date(e.quando);
+    const data=dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const tipoCor=e.quem_tipo==='equipe'?'#7D3C98':'#155B67';
+    const tipoEmoji=e.quem_tipo==='equipe'?'🛠️':'🏢';
+    const d=e.detalhes||{};
+    let detalhe='';
+    if(e.acao==='criada'){
+      detalhe='<small style="color:var(--text2)">Título: <i>"'+(d.titulo||'')+'"</i>'+(d.anexos?' · 📎 '+d.anexos+' anexo(s)':'')+'</small>';
+    } else if(e.acao==='status_alterado'){
+      detalhe='<small style="color:var(--text2)">de <b>'+(statusLabels[d.de]||d.de)+'</b> → <b>'+(statusLabels[d.para]||d.para)+'</b></small>';
+    } else if(e.acao==='editada'){
+      const partes=[];
+      if(d.titulo) partes.push('título alterado');
+      if(d.descricao_alterada) partes.push('descrição atualizada');
+      if(d.categoria) partes.push('categoria alterada');
+      if(d.urgencia) partes.push('urgência alterada');
+      if(d.anexos_depois!=null && d.anexos_antes!=null){
+        const dif=d.anexos_depois - d.anexos_antes;
+        if(dif>0) partes.push('+'+dif+' anexo(s)');
+        else if(dif<0) partes.push(Math.abs(dif)+' anexo(s) removido(s)');
+      }
+      detalhe='<small style="color:var(--text2)">'+(partes.join(' · ')||'alteração')+'</small>';
+    } else if(e.acao==='respondida' || e.acao==='resposta_editada'){
+      const txt=(d.texto||'').replace(/</g,'&lt;');
+      detalhe=txt?'<small style="color:var(--text2);font-style:italic">"'+txt.substring(0,150)+(txt.length>150?'…':'')+'"</small>':'';
+    }
+    return `<div style="display:flex;gap:10px;padding:8px 0;${i<eventos.length-1?'border-bottom:1px dashed var(--gray2)':''}">
+      <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:${tipoCor}15;border:2px solid ${tipoCor};color:${tipoCor};display:flex;align-items:center;justify-content:center;font-size:13px">${tipoEmoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${labels[e.acao]||e.acao}</div>
+        <div style="font-size:10.5px;color:var(--text2);margin-top:1px">${data} · por <b>${e.quem_nome||'—'}</b></div>
+        ${detalhe?'<div style="margin-top:3px;font-size:11px">'+detalhe+'</div>':''}
       </div>
     </div>`;
   }).join('');
+  return `<div style="background:#fff;border:1px solid var(--gray2);border-radius:8px;padding:10px 14px;margin-top:8px">
+    <div style="font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--gray2)">📜 Histórico (${eventos.length})</div>
+    ${linhas}
+  </div>`;
 }
 
 let _respAnexos=[];
