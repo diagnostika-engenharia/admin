@@ -124,6 +124,7 @@ tr.row-click:hover{background:var(--gray)}
   <div id="sec-demandas" style="display:none">
     <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <div style="font-weight:700;font-size:14px;color:var(--text)">💬 Demandas dos Síndicos</div>
+      <input type="search" id="filtro-busca-dem" oninput="renderDemandas()" placeholder="🔍 Protocolo, título ou descrição" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:180px">
       <select id="filtro-status" onchange="renderDemandas()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px">
         <option value="">Todos os status</option>
         <option value="aberta" selected>🆕 Abertas</option>
@@ -241,9 +242,11 @@ async function carregarDemandas(){
 function renderDemandas(){
   const fStatus=document.getElementById('filtro-status').value;
   const fCondo=document.getElementById('filtro-condo-dem').value;
+  const fBusca=(document.getElementById('filtro-busca-dem')?.value||'').trim().toLowerCase();
   let v=allDemandas;
   if(fStatus) v=v.filter(d=>d.status===fStatus);
   if(fCondo) v=v.filter(d=>d.condo_id===fCondo);
+  if(fBusca) v=v.filter(d=>(d.protocolo||'').toLowerCase().includes(fBusca)||(d.titulo||'').toLowerCase().includes(fBusca)||(d.descricao||'').toLowerCase().includes(fBusca));
   const el=document.getElementById('demandas-grid');
   if(!v.length){el.innerHTML='<div style="background:#fff;border-radius:10px;padding:40px;text-align:center;color:var(--text2)">Nenhuma demanda encontrada com este filtro</div>';return;}
   const cats={corretiva:'🔧 Manutenção corretiva',duvida:'❓ Dúvida técnica',reforma:'🏗️ Aprovação de reforma',laudo:'📋 Solicitação de laudo',emergencia:'🚨 Emergência',documento:'📄 Documento'};
@@ -264,6 +267,7 @@ function renderDemandas(){
     return `<div style="background:#fff;border-radius:10px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid ${statusCor[d.status]}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
+          ${d.protocolo?`<div style="font-size:10.5px;font-weight:700;color:var(--teal);letter-spacing:.5px;margin-bottom:3px;font-family:'SF Mono',Menlo,Consolas,monospace">📋 ${d.protocolo}</div>`:''}
           <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:3px">${d.titulo}</div>
           <div style="font-size:11.5px;color:var(--text2)"><span class="pill p-${c.cls}">${c.nome}</span> · ${cats[d.categoria]||d.categoria} · ${urgs[d.urgencia]||d.urgencia}${fotos.length?' · 📎 '+fotos.length+' anexo(s)':''}</div>
         </div>
