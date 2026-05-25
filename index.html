@@ -10,8 +10,8 @@
 :root{--teal:#155B67;--teal-dk:#0D3C44;--turq:#00B4AC;--lime:#8DB72A;--purple:#7D3C98;--amber:#D4A24C;--red:#C00000;--green:#1B8A4A;--text:#1A2E31;--text2:#4A6568;--gray:#F0F4F5;--gray2:#E0EAEC;--gray3:#A8BFC2;--gray4:#5A7A7E}
 html,body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray);color:var(--text);font-size:14px;min-height:100vh}
 
-header{background:var(--teal);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.15);position:sticky;top:0;z-index:10}
-header img{height:34px;filter:brightness(0) invert(1)}
+header{background:var(--teal);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.15);position:sticky;top:0;z-index:10}
+header img{height:52px;filter:brightness(0) invert(1)}
 header h1{font-size:18px;font-weight:700;flex:1}
 header a{color:#fff;text-decoration:none;font-size:12px;background:rgba(255,255,255,.15);padding:6px 12px;border-radius:6px}
 header a:hover{background:rgba(255,255,255,.25)}
@@ -103,7 +103,7 @@ tr.row-click:hover{background:var(--gray)}
   </div>
 
   <table id="tabela">
-    <thead><tr><th>Data</th><th>Condomínio</th><th>Engenheiro</th><th style="text-align:center">Itens</th><th style="text-align:center">Status</th><th>Última atualização</th></tr></thead>
+    <thead><tr><th>Data</th><th>Condomínio</th><th>Engenheiro</th><th style="text-align:center">Itens</th><th style="text-align:center">Status</th><th>Última atualização</th><th style="text-align:center">Ações</th></tr></thead>
     <tbody id="tbody"><tr><td colspan="6" class="loading">Carregando visitas…</td></tr></tbody>
   </table>
 </main>
@@ -188,6 +188,7 @@ function renderTabela(){
       <td style="text-align:center">${conf}/${itens.length} <small style="color:#5A7A7E">(${na} N/A)</small></td>
       <td style="text-align:center">${status}</td>
       <td><small>${upd}</small></td>
+      <td style="text-align:center"><button onclick="excluirVisitaAdmin('${x.id}',event)" title="Excluir visita" style="background:transparent;border:1px solid var(--gray2);color:var(--red);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -245,6 +246,18 @@ function ampliarFoto(src){
 }
 
 function recarregar(){ carregar(); }
+
+async function excluirVisitaAdmin(id,ev){
+  if(ev){ev.stopPropagation();}
+  if(!confirm('⚠ Excluir esta visita permanentemente?\n\nIsso remove:\n• Dados do checklist\n• Fotos e assinaturas\n• Registro no banco\n\nNÃO pode ser desfeito.')) return;
+  try{
+    const {error}=await sb.from('visitas').delete().eq('id',id);
+    if(error) throw error;
+    allVisitas=allVisitas.filter(v=>v.id!==id);
+    renderStats();
+    renderTabela();
+  }catch(e){ alert('Erro ao excluir: '+e.message); }
+}
 document.getElementById('filtro-condo').addEventListener('change',renderTabela);
 document.getElementById('filtro-busca').addEventListener('input',renderTabela);
 
