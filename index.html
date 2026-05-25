@@ -250,8 +250,19 @@ document.getElementById('filtro-busca').addEventListener('input',renderTabela);
 
 carregar();
 
-// Atualização automática a cada 30 segundos
-setInterval(carregar,30000);
+// Realtime: recebe push de qualquer mudança no banco instantaneamente
+try{
+  sb.channel('admin-realtime').on('postgres_changes',{event:'*',schema:'public',table:'visitas'},payload=>{
+    console.log('☁ Realtime:',payload.eventType);
+    document.getElementById('conn-badge').textContent='● Atualizado agora ('+payload.eventType+')';
+    carregar();
+  }).subscribe();
+}catch(e){console.warn('Realtime falhou:',e);}
+
+// Polling de segurança: a cada 15s, mesmo se Realtime cair
+setInterval(carregar,15000);
+window.addEventListener('online',carregar);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')carregar();});
 </script>
 </body>
 </html>
