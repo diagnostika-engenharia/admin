@@ -253,15 +253,150 @@ function renderDemandas(){
   }).join('');
 }
 
+let _respAnexos=[];
+
+function compressarImagemAdmin(file,maxW=1280,quality=0.78){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const r=Math.min(1,maxW/img.width);
+        const c=document.createElement('canvas');
+        c.width=Math.round(img.width*r); c.height=Math.round(img.height*r);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        resolve({tipo:'image', origem:'diagnostika', url:c.toDataURL('image/jpeg',quality), nome:file.name, tamanho:Math.round(c.width*c.height*0.3/1024)+'KB'});
+      };
+      img.onerror=()=>reject(new Error('imagem inválida'));
+      img.src=fr.result;
+    };
+    fr.onerror=()=>reject(new Error('leitura falhou'));
+    fr.readAsDataURL(file);
+  });
+}
+function lerArquivoBin(file, maxMB=25, tipoLabel='video'){
+  return new Promise((resolve,reject)=>{
+    if(file.size>maxMB*1024*1024){
+      reject(new Error('"'+file.name+'" tem mais de '+maxMB+'MB. Reduza o arquivo.'));
+      return;
+    }
+    const fr=new FileReader();
+    fr.onload=()=>resolve({tipo:tipoLabel, origem:'diagnostika', url:fr.result, nome:file.name, tamanho:Math.round(file.size/1024)+'KB', mimeType:file.type});
+    fr.onerror=()=>reject(new Error('falha ao ler'));
+    fr.readAsDataURL(file);
+  });
+}
+
+async function processarAnexosAdmin(inp){
+  if(!inp.files.length) return;
+  const preview=document.getElementById('resp-preview');
+  preview.innerHTML='<div style="text-align:center;color:var(--text2);font-size:12px;padding:8px">⏳ Processando…</div>';
+  for(const f of inp.files){
+    try{
+      if(f.type.startsWith('image/')){
+        _respAnexos.push(await compressarImagemAdmin(f));
+      } else if(f.type.startsWith('video/')){
+        _respAnexos.push(await lerArquivoBin(f,25,'video'));
+      } else if(f.type==='application/pdf' || f.name.toLowerCase().endsWith('.pdf')){
+        _respAnexos.push(await lerArquivoBin(f,10,'pdf'));
+      } else {
+        // outros documentos (docx, xlsx, etc)
+        _respAnexos.push(await lerArquivoBin(f,10,'doc'));
+      }
+    }catch(e){ alert('Erro com '+f.name+': '+e.message); }
+  }
+  inp.value='';
+  renderRespPreview();
+}
+function renderRespPreview(){
+  const preview=document.getElementById('resp-preview');
+  if(!_respAnexos.length){ preview.innerHTML=''; return; }
+  preview.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">📎 '+_respAnexos.length+' anexo(s)</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px">'+_respAnexos.map((a,i)=>{
+    let thumb;
+    if(a.tipo==='image') thumb='<img src="'+a.url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px">';
+    else if(a.tipo==='video') thumb='<div style="width:100%;aspect-ratio:1;background:#1a1a1a;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px">🎥</div>';
+    else if(a.tipo==='pdf') thumb='<div style="width:100%;aspect-ratio:1;background:#C00000;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700">PDF</div>';
+    else thumb='<div style="width:100%;aspect-ratio:1;background:var(--gray4);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px">📄</div>';
+    return '<div style="position:relative">'+thumb+'<button type="button" onclick="removerRespAnexo('+i+')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(192,0,0,.95);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;line-height:1;padding:0;display:flex;align-items:center;justify-content:center">×</button><div style="font-size:9px;color:var(--text2);text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+a.nome+'">'+a.nome+'</div></div>';
+  }).join('')+'</div>';
+}
+function removerRespAnexo(i){ _respAnexos.splice(i,1); renderRespPreview(); }
+
 async function responderDemanda(id){
   const d=allDemandas.find(x=>x.id===id);
-  const r=prompt('Resposta para a demanda "'+d.titulo+'":', d.resposta||'');
-  if(r===null) return;
+  _respAnexos=[];
+
+  // Modal completo
+  const ov=document.createElement('div');
+  ov.className='modal-overlay';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="modal" style="max-width:640px">
+    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+    <h2>💬 Responder Demanda</h2>
+    <div class="sub" style="margin-bottom:14px">"${d.titulo}" · ${d.condo_id}</div>
+
+    ${d.resposta?'<div style="background:rgba(27,138,74,.06);border-left:3px solid var(--green);padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;font-size:12.5px"><b style="color:var(--green);font-size:11px;text-transform:uppercase;display:block;margin-bottom:4px">Resposta atual</b>'+d.resposta+'</div>':''}
+
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:6px">Resposta técnica</label>
+    <textarea id="resp-texto" style="width:100%;padding:12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;font-family:inherit;min-height:120px;resize:vertical;outline:none">${d.resposta||''}</textarea>
+
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin:14px 0 6px">📎 Anexar Documentos / Fotos / Vídeos</label>
+    <div style="background:#fff;border:1.5px dashed var(--gray2);border-radius:8px;padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+        <label style="cursor:pointer;padding:10px 6px;border:1.5px solid var(--teal);background:rgba(21,91,103,.05);color:var(--teal);border-radius:6px;font-weight:700;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center">
+          <span style="font-size:18px">📷</span>Foto
+          <input type="file" accept="image/*" multiple onchange="processarAnexosAdmin(this)" style="display:none">
+        </label>
+        <label style="cursor:pointer;padding:10px 6px;border:1.5px solid #C00000;background:rgba(192,0,0,.04);color:#C00000;border-radius:6px;font-weight:700;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center">
+          <span style="font-size:18px">🎥</span>Vídeo
+          <input type="file" accept="video/*" onchange="processarAnexosAdmin(this)" style="display:none">
+        </label>
+        <label style="cursor:pointer;padding:10px 6px;border:1.5px solid #C00000;background:#fff;color:#C00000;border-radius:6px;font-weight:700;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center">
+          <span style="font-size:18px">📄</span>PDF
+          <input type="file" accept="application/pdf" multiple onchange="processarAnexosAdmin(this)" style="display:none">
+        </label>
+        <label style="cursor:pointer;padding:10px 6px;border:1.5px solid var(--gray3);background:#fff;color:var(--text2);border-radius:6px;font-weight:700;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center">
+          <span style="font-size:18px">📁</span>Outro
+          <input type="file" multiple onchange="processarAnexosAdmin(this)" style="display:none">
+        </label>
+      </div>
+      <div id="resp-preview" style="margin-top:10px"></div>
+      <div style="font-size:10.5px;color:var(--text2);text-align:center;margin-top:6px">Imagens: comprimidas · Vídeo: até 25MB · PDF/Doc: até 10MB cada</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button onclick="this.closest('.modal-overlay').remove()" style="flex:0 0 auto;padding:12px 18px;border:1.5px solid var(--gray3);background:#fff;color:var(--text2);border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Cancelar</button>
+      <button id="btn-enviar-resp" onclick="enviarResposta('${id}')" style="flex:1;padding:12px;border:none;background:var(--teal);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">📤 Enviar resposta para o síndico</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  // Se já tinha resposta com anexos antes, restaura
+  const anexosAntigos=(d.fotos||[]).filter(f=>f.origem==='diagnostika');
+  if(anexosAntigos.length){ _respAnexos=[...anexosAntigos]; renderRespPreview(); }
+}
+
+async function enviarResposta(id){
+  const d=allDemandas.find(x=>x.id===id);
+  const texto=document.getElementById('resp-texto').value.trim();
+  if(!texto && !_respAnexos.length){ alert('Escreva uma resposta ou anexe pelo menos um arquivo'); return; }
+  const btn=document.getElementById('btn-enviar-resp');
+  btn.disabled=true; btn.textContent='⏳ Enviando…';
   try{
-    const {error}=await sb.from('demandas').update({resposta:r,respondido_em:new Date().toISOString(),respondido_por:'Diagnóstika',status:d.status==='aberta'?'em_andamento':d.status}).eq('id',id);
+    // Mescla anexos: mantém do síndico (sem origem ou origem=sindico), substitui da equipe
+    const fotosExistentes=(d.fotos||[]).filter(f=>!f.origem || f.origem==='sindico');
+    const novasFotos=[...fotosExistentes, ..._respAnexos];
+    const {error}=await sb.from('demandas').update({
+      resposta:texto,
+      respondido_em:new Date().toISOString(),
+      respondido_por:'Diagnóstika',
+      status:d.status==='aberta'?'em_andamento':d.status,
+      fotos:novasFotos
+    }).eq('id',id);
     if(error) throw error;
+    _respAnexos=[];
+    document.querySelector('.modal-overlay')?.remove();
     carregarDemandas();
-  }catch(e){alert('Erro: '+e.message);}
+  }catch(e){ alert('Erro: '+e.message); btn.disabled=false; btn.textContent='📤 Enviar resposta para o síndico'; }
 }
 async function mudarStatus(id,novoStatus){
   try{
