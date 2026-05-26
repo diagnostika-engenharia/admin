@@ -247,12 +247,17 @@ function inicializarAgendaAdm(){
   }
 }
 
+let _demandasProgramadasAdm=[];
 async function carregarAgendaAdm(){
   if(!_agendaCondo){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio</div>'; return; }
   document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">⏳ Carregando…</div>';
-  const {data,error}=await sb.from('app_config').select('*').eq('key','eventos_'+_agendaCondo).maybeSingle();
-  if(error){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;color:var(--red);border-radius:10px">Erro: '+error.message+'</div>'; return; }
-  _eventosCondo=(data?.value||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const [evResp, demResp]=await Promise.all([
+    sb.from('app_config').select('*').eq('key','eventos_'+_agendaCondo).maybeSingle(),
+    sb.from('demandas').select('*').eq('condo_id',_agendaCondo).not('data_programada','is',null)
+  ]);
+  if(evResp.error){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;color:var(--red);border-radius:10px">Erro: '+evResp.error.message+'</div>'; return; }
+  _eventosCondo=(evResp.data?.value||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  _demandasProgramadasAdm=demResp.data||[];
   renderAgendaListaAdm();
 }
 
@@ -267,15 +272,51 @@ async function renderAgendaAdm(){
 function renderAgendaListaAdm(){
   const el=document.getElementById('agenda-lista');
   const c=CONDOS[_agendaCondo]||{nome:_agendaCondo,cor:'#155B67'};
-  if(!_eventosCondo.length){
+  const totalItens=_eventosCondo.length+_demandasProgramadasAdm.length;
+  if(!totalItens){
     el.innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">Nenhum evento agendado em <b>'+c.nome+'</b><br><small>Use o botão <b>➕ Novo evento</b> acima para adicionar</small></div>';
     return;
   }
   const tipos={ensaio:'🧪',laudo:'📋',inspeção:'🔍','inspeção especial':'🔍',perícia:'⚖️',obra:'🏗️',reunião:'👥',limpeza:'🧹',documental:'📑',outro:'📌',evento:'📌'};
   const hoje=new Date().toISOString().slice(0,10);
+
+  // Mistura eventos + demandas programadas em ordem cronológica
+  const todos=[
+    ..._eventosCondo.map(e=>({...e, _kind:'evento'})),
+    ..._demandasProgramadasAdm.map(d=>({
+      _kind:'demanda',
+      data:d.data_programada, hora:d.hora_programada,
+      titulo:d.titulo, descricao:d.descricao_programada,
+      tipo:d.tipo_programado||'Demanda', protocolo:d.protocolo,
+      demanda_id:d.id, dem_status:d.status, dem_urgencia:d.urgencia
+    }))
+  ].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+
   el.innerHTML='<div style="background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
-    +'<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📅 '+c.nome+' — '+_eventosCondo.length+' evento(s)</div>'
-    +_eventosCondo.map(e=>{
+    +'<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📅 '+c.nome+' — '+_eventosCondo.length+' evento(s) + '+_demandasProgramadasAdm.length+' demanda(s) programada(s)</div>'
+    +todos.map(e=>{
+      if(e._kind==='demanda'){
+        const [y,mo,d]=(e.data||'').split('-').map(Number);
+        const dt=new Date(y,(mo||1)-1,d||1);
+        const passou=e.data<hoje;
+        return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray2);${passou?'opacity:.6':''}">
+          <div style="text-align:center;width:50px;flex-shrink:0;background:#0D3C44;color:#fff;border-radius:8px;padding:6px 4px">
+            <div style="font-size:18px;font-weight:800;line-height:1">${String(d||'').padStart(2,'0')}</div>
+            <div style="font-size:9px;text-transform:uppercase;margin-top:2px;opacity:.9">${['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][mo||0]}</div>
+            <div style="font-size:8px;margin-top:2px;opacity:.7">${y||''}</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="background:#0D3C44;color:#fff;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">📅 DEMANDA</span><span style="font-size:10.5px;color:var(--text2);font-family:'SF Mono',Menlo,Consolas,monospace">${e.protocolo||''}</span>${e.hora?'<span style="font-size:11px;color:#0D3C44;font-weight:700">⏰ '+e.hora.substring(0,5)+'</span>':''}</div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--text);margin-top:3px">${e.tipo}: ${e.titulo}</div>
+            ${e.descricao?'<div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.4">'+e.descricao+'</div>':''}
+            <div style="font-size:10px;color:var(--gray4);margin-top:4px">${dt.toLocaleDateString('pt-BR',{weekday:'long'})}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button onclick="trocarSecao('demandas');setTimeout(()=>document.getElementById('hist-adm-${e.demanda_id}')?.scrollIntoView({block:'center'}),100)" style="padding:6px 10px;background:#fff;border:1px solid #0D3C44;color:#0D3C44;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">👁 Ver chamado</button>
+            <button onclick="programarDemanda('${e.demanda_id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--teal);color:var(--teal);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">⏳ Reagendar</button>
+          </div>
+        </div>`;
+      }
       const [y,mo,d]=(e.data||'').split('-').map(Number);
       const dt=new Date(y,(mo||1)-1,d||1);
       const passou=e.data<hoje;
@@ -440,11 +481,10 @@ function renderDemandas(){
       <div style="font-size:11px;color:var(--gray4);margin-bottom:8px">${dt.toLocaleString('pt-BR')}</div>
       ${d.descricao?'<div style="font-size:13px;color:var(--text);line-height:1.5;background:var(--gray);padding:10px 12px;border-radius:6px;margin-bottom:8px;white-space:pre-wrap">'+d.descricao+'</div>':''}
       ${anexosHtml}
-      ${d.data_programada?`<div style="background:rgba(21,91,103,.06);border-left:3px solid var(--teal);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px">
-        <b style="color:var(--teal);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">📅 Programado pela Diagnóstika</b>
-        <div style="font-size:13px;font-weight:700">${d.tipo_programado||'Visita'} em <span style="color:var(--teal)">${fmtBR(d.data_programada)}</span>${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</div>
-        ${d.descricao_programada?'<div style="font-size:11.5px;color:var(--text2);margin-top:3px">'+d.descricao_programada+'</div>':''}
-        ${d.programado_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">Programado em '+new Date(d.programado_em).toLocaleString('pt-BR')+(d.programado_por?' por '+d.programado_por:'')+'</div>':''}
+      ${d.data_programada?`<div style="background:rgba(13,60,68,.08);border-left:3px solid #0D3C44;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" title="${(d.descricao_programada||'').replace(/"/g,'&quot;')}">
+        <b style="color:#0D3C44">📅 Programado:</b>
+        <span style="font-weight:700;color:#0D3C44">${d.tipo_programado||'Visita'} · ${fmtBR(d.data_programada)}${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</span>
+        ${d.programado_por?'<span style="color:var(--text2);font-size:11px">por '+d.programado_por+'</span>':''}
       </div>`:''}
       ${d.resposta?'<div style="background:rgba(27,138,74,.08);border-left:3px solid var(--green);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px"><b style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">✅ Resposta enviada</b>'+d.resposta+(d.respondido_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">'+new Date(d.respondido_em).toLocaleString('pt-BR')+(d.respondido_por?' · '+d.respondido_por:'')+'</div>':'')+'</div>':''}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
