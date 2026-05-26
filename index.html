@@ -174,7 +174,12 @@ tr.row-click:hover{background:var(--gray)}
 
   <div id="sec-demandas" style="display:none">
     <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <div style="font-weight:700;font-size:14px;color:var(--text)">💬 Demandas dos Síndicos(as)</div>
+      <div style="font-weight:700;font-size:14px;color:var(--text)">💬 Demandas e Chamados</div>
+      <select id="filtro-origem" onchange="renderDemandas()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px">
+        <option value="">Todas as origens</option>
+        <option value="sindico">👤 Apenas Síndicos(as)</option>
+        <option value="morador">🏠 Apenas Moradores</option>
+      </select>
       <input type="search" id="filtro-busca-dem" oninput="renderDemandas()" placeholder="🔍 Protocolo, título ou descrição" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:180px">
       <select id="filtro-status" onchange="renderDemandas()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px">
         <option value="">Todos os status</option>
@@ -499,9 +504,11 @@ function renderDemandas(){
   const fStatus=document.getElementById('filtro-status').value;
   const fCondo=document.getElementById('filtro-condo-dem').value;
   const fBusca=(document.getElementById('filtro-busca-dem')?.value||'').trim().toLowerCase();
+  const fOrigem=document.getElementById('filtro-origem')?.value||'';
   let v=allDemandas;
   if(fStatus==='deletada') v=v.filter(d=>d.deletada_em);
   else { v=v.filter(d=>!d.deletada_em); if(fStatus) v=v.filter(d=>d.status===fStatus); }
+  if(fOrigem) v=v.filter(d=>(d.origem||'sindico')===fOrigem);
   if(fCondo) v=v.filter(d=>d.condo_id===fCondo);
   if(fBusca) v=v.filter(d=>(d.protocolo||'').toLowerCase().includes(fBusca)||(d.titulo||'').toLowerCase().includes(fBusca)||(d.descricao||'').toLowerCase().includes(fBusca));
   const el=document.getElementById('demandas-grid');
@@ -534,15 +541,18 @@ function renderDemandas(){
     </div>`:'';
     const temSide=bannerHtml||respostaHtml;
     const excluida=!!d.deletada_em;
-    return `<div class="dem s-${d.status}${excluida?' excluida':''}" data-dem-id="${d.id}" style="${excluida?'opacity:.75;border-left-color:#C00000;background:rgba(192,0,0,.03)':''}">
+    const isMorador=(d.origem||'sindico')==='morador';
+    return `<div class="dem s-${d.status}${excluida?' excluida':''}${isMorador?' morador':''}" data-dem-id="${d.id}" style="${excluida?'opacity:.75;border-left-color:#C00000;background:rgba(192,0,0,.03)':isMorador?'border-left-color:#7D3C98;background:linear-gradient(to right,rgba(125,60,152,.04),#fff 60%)':''}">
       <div class="dem-row1">
         <div class="dem-row1-left">
           ${d.protocolo?`<div class="dem-protocolo" onclick="copiarProtocoloAdm('${d.protocolo}')" title="Clique para copiar">📋 ${d.protocolo}</div>`:''}
           <div class="dem-titulo">${d.titulo}</div>
           <div class="dem-meta"><span class="pill p-${c.cls}">${c.nome}</span> · ${cats[d.categoria]||d.categoria} · ${urgs[d.urgencia]||d.urgencia}${fotos.length?' · 📎 '+fotos.length+' anexo(s)':''}</div>
+          ${isMorador?`<div style="margin-top:5px;padding:6px 10px;background:rgba(125,60,152,.10);border-left:3px solid #7D3C98;border-radius:0 6px 6px 0;font-size:12px"><b style="color:#7D3C98">🏠 MORADOR:</b> ${d.morador_nome||'—'} · ${d.morador_apto||'—'} ${d.morador_telefone?`· <a href="${linkWhatsApp(d)}" target="_blank" style="color:#1B8A4A;font-weight:700;text-decoration:none">📱 ${d.morador_telefone}</a>`:''}</div>`:''}
           <div class="dem-ts">${dt.toLocaleString('pt-BR')}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${isMorador?`<span style="background:#7D3C98;color:#fff;padding:4px 10px;border-radius:12px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">🏠 MORADOR</span>`:''}
           ${excluida?`<span style="background:#C00000;color:#fff;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">🗑 EXCLUÍDA pelo síndico</span>`:''}
           <span class="dem-status st-${d.status}">${statusLabel[d.status]||d.status}</span>
         </div>
@@ -564,6 +574,7 @@ function renderDemandas(){
           ${d.status!=='fechada'?`<button class="dem-btn-close" onclick="mudarStatus('${d.id}','fechada')">🔒 Fechar</button>`:''}
         `}
         <button class="dem-btn-sec" onclick="toggleHistoricoAdm('${d.id}')">📜 Histórico</button>
+        ${isMorador && d.morador_telefone && !excluida?`<a href="${linkWhatsApp(d)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#25D366;color:#fff;padding:7px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;border:none">📱 WhatsApp</a>`:''}
         ${!excluida?`<button class="dem-btn-del" onclick="excluirDemanda('${d.id}')">🗑 Excluir</button>`:''}
       </div>
       <div id="hist-adm-${d.id}" style="display:none"></div>
@@ -583,6 +594,26 @@ function detectarTruncamentoAdm(){
       }
     }
   });
+}
+
+function linkWhatsApp(d){
+  if(!d.morador_telefone) return '#';
+  // Limpa telefone, garante código do país (BR=55)
+  let tel = (d.morador_telefone||'').replace(/\D/g,'');
+  if(tel.length>=10 && tel.length<=11 && !tel.startsWith('55')) tel = '55'+tel;
+  // Link público de acompanhamento
+  const link = `https://diagnostika-engenharia.github.io/sindico/acompanhar.html?id=${d.id}`;
+  let msg = `Olá ${(d.morador_nome||'').split(' ')[0]||''}, aqui é da *Diagnóstika Engenharia*.\n\n`;
+  msg += `Recebemos seu chamado *${d.protocolo||''}*: "${d.titulo}".\n\n`;
+  if(d.data_programada){
+    const [y,m,da]=d.data_programada.split('-');
+    msg += `Já agendamos para *${da}/${m}/${y}*${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}.\n\n`;
+  }
+  if(d.resposta){
+    msg += `${d.resposta}\n\n`;
+  }
+  msg += `Acompanhe pelo link: ${link}`;
+  return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 }
 
 function copiarProtocoloAdm(p){
