@@ -79,6 +79,56 @@ tr.row-click:hover{background:var(--gray)}
 .item-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:8px}
 .item-fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 
+/* DEMANDAS — layout fluido em grid (mesmo padrão do Portal do Síndico) */
+.dem{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid var(--gray3);display:grid;grid-template-columns:1fr;gap:8px}
+.dem.s-aberta{border-left-color:#C00000}
+.dem.s-em_andamento{border-left-color:#E65100}
+.dem.s-resolvida{border-left-color:#1B8A4A}
+.dem.s-fechada{border-left-color:#5A7A7E}
+.dem-row1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.dem-row1-left{flex:1;min-width:0}
+.dem-protocolo{font-size:10.5px;font-weight:700;color:var(--teal);letter-spacing:.5px;margin-bottom:3px;font-family:'SF Mono',Menlo,Consolas,monospace;cursor:pointer}
+.dem-protocolo:hover{color:var(--teal-dk)}
+.dem-titulo{font-weight:700;font-size:15px;color:var(--text)}
+.dem-meta{font-size:11.5px;color:var(--text2)}
+.dem-ts{font-size:11px;color:var(--gray4)}
+.dem-status{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.dem-status.st-aberta{background:#C00000}
+.dem-status.st-em_andamento{background:#E65100}
+.dem-status.st-resolvida{background:#1B8A4A}
+.dem-status.st-fechada{background:#5A7A7E}
+.dem-content{display:grid;grid-template-columns:1fr 320px;gap:12px;align-items:start}
+@media(max-width:900px){.dem-content{grid-template-columns:1fr}}
+.dem-content-main{min-width:0}
+.dem-content-side{display:flex;flex-direction:column;gap:8px;min-width:0}
+.dem-desc{font-size:13px;color:var(--text);line-height:1.5;background:var(--gray);padding:10px 12px;border-radius:6px;white-space:pre-wrap}
+.dem-banner{background:rgba(13,60,68,.08);border-left:3px solid #0D3C44;padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px}
+.dem-banner .label{color:#0D3C44;font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px;font-weight:700}
+.dem-banner .data{font-size:13px;font-weight:700;color:#0D3C44}
+.dem-banner .ts{font-size:10px;color:var(--text2);margin-top:5px}
+.dem-resposta{background:rgba(21,91,103,.10);border-left:3px solid var(--teal);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px}
+.dem-resposta .label{color:var(--teal);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px;font-weight:700}
+.dem-anexos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
+.dem-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.dem-acoes button{padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:none}
+.dem-btn-pri{background:var(--teal);color:#fff}
+.dem-btn-prog{background:#0D3C44;color:#fff}
+.dem-btn-start{background:#E65100;color:#fff}
+.dem-btn-ok{background:var(--green);color:#fff}
+.dem-btn-close{background:var(--gray3);color:var(--text)}
+.dem-btn-sec{background:transparent;border:1px solid var(--gray3)!important;color:var(--text2)}
+.dem-btn-del{background:transparent;border:1px solid var(--red)!important;color:var(--red)}
+
+.truncavel{cursor:pointer;position:relative;max-height:5.5em;overflow:hidden;transition:max-height .25s}
+.truncavel.com-overflow::after{content:"";position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(to bottom,transparent,var(--gray));pointer-events:none}
+.dem-resposta.truncavel.com-overflow::after{background:linear-gradient(to bottom,transparent,rgba(21,91,103,.18))}
+.truncavel.com-overflow .ver-mais{display:inline-block;position:absolute;bottom:2px;right:8px;color:var(--teal);font-weight:700;font-size:11px;pointer-events:none;z-index:1}
+.truncavel:not(.com-overflow) .ver-mais{display:none}
+.truncavel.com-overflow:not(.expandido) .ver-mais::before{content:"ver mais ▼"}
+.truncavel.expandido{max-height:none}
+.truncavel.expandido::after{display:none}
+.truncavel.expandido .ver-mais::before{content:"ver menos ▲"}
+
 .foto-zoom{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
 .foto-zoom img,.foto-zoom video{max-width:100%;max-height:100%;object-fit:contain}
 </style>
@@ -124,7 +174,7 @@ tr.row-click:hover{background:var(--gray)}
 
   <div id="sec-demandas" style="display:none">
     <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <div style="font-weight:700;font-size:14px;color:var(--text)">💬 Demandas dos Síndicos</div>
+      <div style="font-weight:700;font-size:14px;color:var(--text)">💬 Demandas dos Síndicos(as)</div>
       <input type="search" id="filtro-busca-dem" oninput="renderDemandas()" placeholder="🔍 Protocolo, título ou descrição" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:180px">
       <select id="filtro-status" onchange="renderDemandas()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px">
         <option value="">Todos os status</option>
@@ -132,6 +182,7 @@ tr.row-click:hover{background:var(--gray)}
         <option value="em_andamento">⏳ Em andamento</option>
         <option value="resolvida">✅ Resolvidas</option>
         <option value="fechada">🔒 Fechadas</option>
+        <option value="deletada">🗑 Excluídas pelo síndico</option>
       </select>
       <select id="filtro-condo-dem" onchange="renderDemandas()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:140px">
         <option value="">Todos condomínios</option>
@@ -186,7 +237,7 @@ function bloqueioAdmin(motivo){
       ${motivo==='sindico'?`
         <p style="color:#4A6568;margin-bottom:16px;line-height:1.5;font-size:13px">Esta área é exclusiva da equipe Diagnóstika para gestão interna.</p>
         <p style="color:#4A6568;margin-bottom:20px;line-height:1.5;font-size:13px">Você está logado(a) como <b>síndico(a)</b>. Acesse o portal apropriado:</p>
-        <a href="/sindico/" style="display:inline-block;background:#155B67;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:10px">📂 Ir para Portal do Síndico</a><br>
+        <a href="/sindico/" style="display:inline-block;background:#155B67;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:10px">📂 Ir para Portal do Síndico(a)</a><br>
         <button onclick="sb.auth.signOut().then(()=>location.replace('/'))" style="background:transparent;border:1.5px solid #5A7A7E;color:#5A7A7E;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;margin-top:12px">Sair e voltar ao portal</button>
       `:`
         <p style="color:#4A6568;margin-bottom:20px;line-height:1.5;font-size:13px">É necessário fazer login no portal de sistemas da Diagnóstika.</p>
@@ -253,7 +304,7 @@ async function carregarAgendaAdm(){
   document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">⏳ Carregando…</div>';
   const [evResp, demResp]=await Promise.all([
     sb.from('app_config').select('*').eq('key','eventos_'+_agendaCondo).maybeSingle(),
-    sb.from('demandas').select('*').eq('condo_id',_agendaCondo).not('data_programada','is',null)
+    sb.from('demandas').select('*').eq('condo_id',_agendaCondo).is('deletada_em',null).not('data_programada','is',null)
   ]);
   if(evResp.error){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;color:var(--red);border-radius:10px">Erro: '+evResp.error.message+'</div>'; return; }
   _eventosCondo=(evResp.data?.value||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
@@ -449,7 +500,8 @@ function renderDemandas(){
   const fCondo=document.getElementById('filtro-condo-dem').value;
   const fBusca=(document.getElementById('filtro-busca-dem')?.value||'').trim().toLowerCase();
   let v=allDemandas;
-  if(fStatus) v=v.filter(d=>d.status===fStatus);
+  if(fStatus==='deletada') v=v.filter(d=>d.deletada_em);
+  else { v=v.filter(d=>!d.deletada_em); if(fStatus) v=v.filter(d=>d.status===fStatus); }
   if(fCondo) v=v.filter(d=>d.condo_id===fCondo);
   if(fBusca) v=v.filter(d=>(d.protocolo||'').toLowerCase().includes(fBusca)||(d.titulo||'').toLowerCase().includes(fBusca)||(d.descricao||'').toLowerCase().includes(fBusca));
   const el=document.getElementById('demandas-grid');
@@ -462,44 +514,85 @@ function renderDemandas(){
     const c=CONDOS[d.condo_id]||{nome:d.condo_id,cls:'mc'};
     const dt=new Date(d.created_at);
     const fotos=d.fotos||[];
-    const anexosHtml=fotos.length?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:8px">'+fotos.map((a,i)=>{
+    const anexosHtml=fotos.length?'<div class="dem-anexos-grid">'+fotos.map((a,i)=>{
       if(a.tipo==='video'){
         return '<div style="position:relative;cursor:pointer" onclick="abrirAnexoAdmin(\''+d.id+'\','+i+')"><video src="'+a.url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;background:#000" muted></video><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;text-shadow:0 2px 8px rgba(0,0,0,.8);pointer-events:none">▶</div></div>';
       }
       const url=typeof a==='string'?a:a.url;
       return '<img src="'+url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;cursor:pointer" onclick="abrirAnexoAdmin(\''+d.id+'\','+i+')">';
     }).join('')+'</div>':'';
-    return `<div style="background:#fff;border-radius:10px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid ${statusCor[d.status]}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          ${d.protocolo?`<div style="font-size:10.5px;font-weight:700;color:var(--teal);letter-spacing:.5px;margin-bottom:3px;font-family:'SF Mono',Menlo,Consolas,monospace">📋 ${d.protocolo}</div>`:''}
-          <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:3px">${d.titulo}</div>
-          <div style="font-size:11.5px;color:var(--text2)"><span class="pill p-${c.cls}">${c.nome}</span> · ${cats[d.categoria]||d.categoria} · ${urgs[d.urgencia]||d.urgencia}${fotos.length?' · 📎 '+fotos.length+' anexo(s)':''}</div>
+    const bannerHtml=d.data_programada?`<div class="dem-banner">
+      <span class="label">📅 Programado pela Diagnóstika</span>
+      <div class="data">${d.tipo_programado||'Visita'} em ${fmtBR(d.data_programada)}${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</div>
+      ${d.descricao_programada?'<div style="font-size:11.5px;color:var(--text);margin-top:4px;line-height:1.4">'+d.descricao_programada+'</div>':''}
+      ${d.programado_em?'<div class="ts">Confirmado em '+new Date(d.programado_em).toLocaleString('pt-BR')+(d.programado_por?' por '+d.programado_por:'')+'</div>':''}
+    </div>`:'';
+    const respostaHtml=d.resposta?`<div class="dem-resposta truncavel">
+      <span class="label">✅ Resposta enviada</span>${d.resposta}
+      ${d.respondido_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">'+new Date(d.respondido_em).toLocaleString('pt-BR')+(d.respondido_por?' · '+d.respondido_por:'')+'</div>':''}
+      <span class="ver-mais"></span>
+    </div>`:'';
+    const temSide=bannerHtml||respostaHtml;
+    const excluida=!!d.deletada_em;
+    return `<div class="dem s-${d.status}${excluida?' excluida':''}" data-dem-id="${d.id}" style="${excluida?'opacity:.75;border-left-color:#C00000;background:rgba(192,0,0,.03)':''}">
+      <div class="dem-row1">
+        <div class="dem-row1-left">
+          ${d.protocolo?`<div class="dem-protocolo" onclick="copiarProtocoloAdm('${d.protocolo}')" title="Clique para copiar">📋 ${d.protocolo}</div>`:''}
+          <div class="dem-titulo">${d.titulo}</div>
+          <div class="dem-meta"><span class="pill p-${c.cls}">${c.nome}</span> · ${cats[d.categoria]||d.categoria} · ${urgs[d.urgencia]||d.urgencia}${fotos.length?' · 📎 '+fotos.length+' anexo(s)':''}</div>
+          <div class="dem-ts">${dt.toLocaleString('pt-BR')}</div>
         </div>
-        <span class="pill" style="background:${statusCor[d.status]};color:#fff">${statusLabel[d.status]||d.status}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${excluida?`<span style="background:#C00000;color:#fff;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">🗑 EXCLUÍDA pelo síndico</span>`:''}
+          <span class="dem-status st-${d.status}">${statusLabel[d.status]||d.status}</span>
+        </div>
       </div>
-      <div style="font-size:11px;color:var(--gray4);margin-bottom:8px">${dt.toLocaleString('pt-BR')}</div>
-      ${d.descricao?'<div style="font-size:13px;color:var(--text);line-height:1.5;background:var(--gray);padding:10px 12px;border-radius:6px;margin-bottom:8px;white-space:pre-wrap">'+d.descricao+'</div>':''}
-      ${d.data_programada?`<div style="background:rgba(13,60,68,.08);border-left:3px solid #0D3C44;padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px;max-width:300px;float:right;clear:both;margin-left:10px">
-        <b style="color:#0D3C44;font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">📅 Programado pela Diagnóstika</b>
-        <div style="font-size:13px;font-weight:700;color:#0D3C44">${d.tipo_programado||'Visita'} em ${fmtBR(d.data_programada)}${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</div>
-        ${d.descricao_programada?'<div style="font-size:11.5px;color:var(--text);margin-top:3px">'+d.descricao_programada+'</div>':''}
-        ${d.programado_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">Confirmado em '+new Date(d.programado_em).toLocaleString('pt-BR')+(d.programado_por?' por '+d.programado_por:'')+'</div>':''}
-      </div>`:''}
-      ${anexosHtml}
-      ${d.resposta?'<div style="background:rgba(27,138,74,.08);border-left:3px solid var(--green);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px"><b style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">✅ Resposta enviada</b>'+d.resposta+(d.respondido_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">'+new Date(d.respondido_em).toLocaleString('pt-BR')+(d.respondido_por?' · '+d.respondido_por:'')+'</div>':'')+'</div>':''}
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button onclick="responderDemanda('${d.id}')" style="background:var(--teal);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💬 ${d.resposta?'Atualizar resposta':'Responder'}</button>
-        <button onclick="programarDemanda('${d.id}')" style="background:#0D3C44;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">📅 ${d.data_programada?'Reagendar':'Programar data'}</button>
-        ${d.status==='aberta'?`<button onclick="mudarStatus('${d.id}','em_andamento')" style="background:#E65100;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">⏳ Iniciar atendimento</button>`:''}
-        ${d.status!=='resolvida'?`<button onclick="mudarStatus('${d.id}','resolvida')" style="background:var(--green);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">✅ Marcar resolvida</button>`:''}
-        ${d.status!=='fechada'?`<button onclick="mudarStatus('${d.id}','fechada')" style="background:var(--gray3);color:var(--text);border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">🔒 Fechar</button>`:''}
-        <button onclick="toggleHistoricoAdm('${d.id}')" style="background:transparent;border:1px solid var(--gray3);color:var(--text2);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">📜 Histórico</button>
-        <button onclick="excluirDemanda('${d.id}')" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">🗑 Excluir</button>
+      <div class="dem-content"${!temSide?' style="grid-template-columns:1fr"':''}>
+        <div class="dem-content-main">
+          ${excluida?`<div style="background:rgba(192,0,0,.06);border-left:3px solid var(--red);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12px;margin-bottom:8px"><b style="color:var(--red);font-size:11px;text-transform:uppercase;letter-spacing:.3px">🗑 Demanda excluída</b><div style="margin-top:4px;color:var(--text)">Por <b>${d.deletada_por_nome||'—'}</b> em ${new Date(d.deletada_em).toLocaleString('pt-BR')}</div>${d.deletada_motivo?`<div style="margin-top:3px;color:var(--text2);font-style:italic">Motivo: "${d.deletada_motivo}"</div>`:''}</div>`:''}
+          ${d.descricao?'<div class="dem-desc truncavel">'+d.descricao+'<span class="ver-mais"></span></div>':''}
+          ${anexosHtml}
+        </div>
+        ${temSide?`<div class="dem-content-side">${bannerHtml}${respostaHtml}</div>`:''}
+      </div>
+      <div class="dem-acoes">
+        ${excluida?`<button class="dem-btn-ok" onclick="restaurarDemanda('${d.id}')">♻ Restaurar</button>`:`
+          <button class="dem-btn-pri" onclick="responderDemanda('${d.id}')">💬 ${d.resposta?'Atualizar resposta':'Responder'}</button>
+          <button class="dem-btn-prog" onclick="programarDemanda('${d.id}')">📅 ${d.data_programada?'Reagendar':'Programar data'}</button>
+          ${d.status==='aberta'?`<button class="dem-btn-start" onclick="mudarStatus('${d.id}','em_andamento')">⏳ Iniciar atendimento</button>`:''}
+          ${d.status!=='resolvida'?`<button class="dem-btn-ok" onclick="mudarStatus('${d.id}','resolvida')">✅ Marcar resolvida</button>`:''}
+          ${d.status!=='fechada'?`<button class="dem-btn-close" onclick="mudarStatus('${d.id}','fechada')">🔒 Fechar</button>`:''}
+        `}
+        <button class="dem-btn-sec" onclick="toggleHistoricoAdm('${d.id}')">📜 Histórico</button>
+        ${!excluida?`<button class="dem-btn-del" onclick="excluirDemanda('${d.id}')">🗑 Excluir</button>`:''}
       </div>
       <div id="hist-adm-${d.id}" style="display:none"></div>
     </div>`;
   }).join('');
+  setTimeout(detectarTruncamentoAdm,50);
+}
+
+function detectarTruncamentoAdm(){
+  document.querySelectorAll('#demandas-grid .truncavel').forEach(el=>{
+    el.classList.remove('com-overflow');
+    if(el.scrollHeight>el.clientHeight+2){
+      el.classList.add('com-overflow');
+      if(!el.dataset.bound){
+        el.dataset.bound='1';
+        el.addEventListener('click',()=>el.classList.toggle('expandido'));
+      }
+    }
+  });
+}
+
+function copiarProtocoloAdm(p){
+  navigator.clipboard?.writeText(p).then(()=>{
+    const t=document.createElement('div');
+    t.textContent='✓ Protocolo '+p+' copiado';
+    t.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2)';
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),1600);
+  });
 }
 
 let _histAdmCache={};
@@ -516,7 +609,7 @@ async function toggleHistoricoAdm(id){
 
 function renderTimelineHistoricoAdm(eventos){
   if(!eventos.length) return '<div style="color:var(--text2);font-size:11px;padding:6px">Nenhum registro.</div>';
-  const labels={criada:'📋 Demanda aberta',editada:'✏️ Editada pelo síndico',respondida:'💬 Respondida pela Diagnóstika',resposta_editada:'💬 Resposta atualizada',status_alterado:'🔄 Status alterado',programada:'📅 Programada (data definida)',reagendada:'⏳ Reagendada (data alterada)',desprogramada:'❌ Programação removida'};
+  const labels={criada:'📋 Demanda aberta',editada:'✏️ Editada pelo(a) síndico(a)',excluida:'🗑 Excluída pelo(a) síndico(a)',respondida:'💬 Respondida pela Diagnóstika',resposta_editada:'💬 Resposta atualizada',status_alterado:'🔄 Status alterado',programada:'📅 Programada (data definida)',reagendada:'⏳ Reagendada (data alterada)',desprogramada:'❌ Programação removida'};
   const statusLabels={aberta:'Aberta',em_andamento:'Em andamento',resolvida:'Resolvida',fechada:'Fechada'};
   const linhas=eventos.map((e,i)=>{
     const dt=new Date(e.quando);
@@ -550,6 +643,8 @@ function renderTimelineHistoricoAdm(eventos){
       detalhe='<small style="color:var(--text2)">de <b>'+(d.de?d.de.split('-').reverse().join('/'):'—')+'</b> → <b>'+(d.para?d.para.split('-').reverse().join('/'):'—')+'</b>'+(d.motivo?'<br><i>Motivo: "'+d.motivo+'"</i>':'')+'</small>';
     } else if(e.acao==='desprogramada'){
       detalhe='<small style="color:var(--text2)">Programação cancelada (era '+(d.era?d.era.split('-').reverse().join('/'):'—')+')</small>';
+    } else if(e.acao==='excluida'){
+      detalhe='<small style="color:var(--red)">'+(d.motivo?'Motivo: <i>"'+d.motivo+'"</i>':'<i>(sem motivo informado)</i>')+'</small>';
     }
     return `<div style="display:flex;gap:10px;padding:8px 0;${i<eventos.length-1?'border-bottom:1px dashed var(--gray2)':''}">
       <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:${tipoCor}15;border:2px solid ${tipoCor};color:${tipoCor};display:flex;align-items:center;justify-content:center;font-size:13px">${tipoEmoji}</div>
@@ -678,7 +773,7 @@ async function programarDemanda(id){
       </div>
     </div>
 
-    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:5px">${isReagendar?'Motivo do reagendamento / observações':'Observações ao síndico'}</label>
+    <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;display:block;margin-bottom:5px">${isReagendar?'Motivo do reagendamento / observações':'Observações ao síndico(a)'}</label>
     <textarea id="prg-desc" placeholder="${isReagendar?'Ex: agenda da equipe foi remanejada por urgência em outro condomínio…':'Ex: visita técnica confirmada às 14h. Favor garantir acesso à área da piscina.'}" lang="pt-BR" spellcheck="true" autocapitalize="sentences" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray2);border-radius:8px;font-size:13px;min-height:80px;resize:vertical;font-family:inherit;margin-bottom:16px">${d.descricao_programada||''}</textarea>
 
     <div style="display:flex;gap:8px">
@@ -716,7 +811,7 @@ async function salvarProgramacao(id){
 }
 
 async function desprogramarDemanda(id){
-  if(!confirm('Remover a programação? O síndico não verá mais a data prevista.')) return;
+  if(!confirm('Remover a programação? O(A) síndico(a) não verá mais a data prevista.')) return;
   const {error}=await sb.from('demandas').update({
     data_programada:null, hora_programada:null, tipo_programado:null,
     descricao_programada:null, programado_em:null, programado_por:null
@@ -770,7 +865,7 @@ async function responderDemanda(id){
 
     <div style="display:flex;gap:8px;margin-top:18px">
       <button onclick="this.closest('.modal-overlay').remove()" style="flex:0 0 auto;padding:12px 18px;border:1.5px solid var(--gray3);background:#fff;color:var(--text2);border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Cancelar</button>
-      <button id="btn-enviar-resp" onclick="enviarResposta('${id}')" style="flex:1;padding:12px;border:none;background:var(--teal);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">📤 Enviar resposta para o síndico</button>
+      <button id="btn-enviar-resp" onclick="enviarResposta('${id}')" style="flex:1;padding:12px;border:none;background:var(--teal);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">📤 Enviar resposta para o(a) síndico(a)</button>
     </div>
   </div>`;
   document.body.appendChild(ov);
@@ -800,7 +895,7 @@ async function enviarResposta(id){
     _respAnexos=[];
     document.querySelector('.modal-overlay')?.remove();
     carregarDemandas();
-  }catch(e){ alert('Erro: '+e.message); btn.disabled=false; btn.textContent='📤 Enviar resposta para o síndico'; }
+  }catch(e){ alert('Erro: '+e.message); btn.disabled=false; btn.textContent='📤 Enviar resposta para o(a) síndico(a)'; }
 }
 async function mudarStatus(id,novoStatus){
   try{
@@ -826,9 +921,29 @@ function abrirAnexoAdmin(demId, idx){
 }
 
 async function excluirDemanda(id){
-  if(!confirm('Excluir esta demanda permanentemente?')) return;
+  const d=allDemandas.find(x=>x.id===id);
+  const motivo=prompt('🗑 Excluir esta demanda?\n\n"'+(d?.titulo||'')+'"\n\nA demanda ficará registrada no histórico para fins de auditoria.\nPara excluir DEFINITIVAMENTE do banco, use o botão na visualização de excluídas.\n\nMotivo (opcional):');
+  if(motivo===null) return;
   try{
-    const {error}=await sb.from('demandas').delete().eq('id',id);
+    const {error}=await sb.from('demandas').update({
+      deletada_em:new Date().toISOString(),
+      deletada_por_nome:_user?.user_metadata?.nome||_user?.email||'Equipe',
+      deletada_por_tipo:'equipe',
+      deletada_motivo:motivo||null,
+      updated_at:new Date().toISOString()
+    }).eq('id',id);
+    if(error) throw error;
+    carregarDemandas();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function restaurarDemanda(id){
+  if(!confirm('♻ Restaurar esta demanda? Ela voltará a aparecer normalmente.')) return;
+  try{
+    const {error}=await sb.from('demandas').update({
+      deletada_em:null,deletada_por_nome:null,deletada_por_tipo:null,deletada_motivo:null,
+      updated_at:new Date().toISOString()
+    }).eq('id',id);
     if(error) throw error;
     carregarDemandas();
   }catch(e){alert('Erro: '+e.message);}

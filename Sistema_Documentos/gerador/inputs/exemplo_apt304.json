@@ -1,0 +1,90 @@
+{
+  "documento": {
+    "tipo": "PT-AD",
+    "ref_sequencial": 1,
+    "ano": 2026,
+    "data_emissao": "2026-05-25",
+    "revisao": "Rev. 00 — Emissão inicial",
+    "status_capa": "NÃO APROVADO"
+  },
+  "cliente": {
+    "nome_curto": "Portal Primavera",
+    "nome_completo": "Condomínio Portal Primavera",
+    "cidade_uf": "Campinas/SP",
+    "destinatario": "Administração do Condomínio Portal Primavera"
+  },
+  "caso": {
+    "tipo_solicitacao": "Solicitação de Reforma",
+    "unidade": "Bloco 07 — Apartamento 304",
+    "proprietario": "Lucas Salles dos Santos",
+    "ambiente": "Banheiro",
+    "sistema_construtivo": "Alvenaria estrutural",
+    "alvenaria_estrutural": true,
+    "responsavel_tecnico": {
+      "nome": "Eng. Guilherme Calixto de Oliveira",
+      "crea": "CREA-SP 5070087371",
+      "art": "2620261607007"
+    },
+    "servicos_declarados": "Piso, bacia sanitária, vidro do box, mármore da bancada e porta — substituições.",
+    "prazo_declarado": "21 dias",
+    "art_metragem": "52 m²"
+  },
+  "objeto_finalidade": {
+    "texto_objeto": "Este Parecer Técnico tem por objeto a análise documental da solicitação de reforma do banheiro da unidade 304, Bloco 07 do Condomínio Portal Primavera, apresentada por Lucas Salles dos Santos, com responsabilidade técnica do Eng. Guilherme Calixto de Oliveira (CREA-SP 5070087371), ART nº 2620261607007.",
+    "texto_finalidade": "A finalidade é verificar a suficiência documental do plano de reforma frente às diretrizes do Manual do Proprietário do empreendimento e à ABNT NBR 16280, subsidiando a decisão da administração condominial quanto à liberação do início dos serviços."
+  },
+  "documentos_analisados": [
+    {
+      "ref": "i",
+      "nome": "Memorial Descritivo / Plano de Reforma",
+      "descricao": "Descrição dos serviços pretendidos no banheiro da unidade."
+    },
+    {
+      "ref": "ii",
+      "nome": "ART nº 2620261607007",
+      "descricao": "Anotação de Responsabilidade Técnica — execução de reforma de edificação, 52 m²."
+    },
+    {
+      "ref": "iii",
+      "nome": "Manual do Proprietário — Portal Primavera",
+      "descricao": "Diretrizes para reformas e restrições construtivas (alvenaria estrutural)."
+    },
+    {
+      "ref": "iv",
+      "nome": "ABNT NBR 16280",
+      "descricao": "Reforma em edificações — Sistema de gestão de reformas."
+    }
+  ],
+  "pendencias": [
+    {"codigo_base": "PD-IMPER", "numero": "PD-01"},
+    {"codigo_base": "PD-ESTANQ", "numero": "PD-02"},
+    {"codigo_base": "PD-CROQUI", "numero": "PD-03"},
+    {"codigo_base": "PD-ALVEN", "numero": "PD-04"},
+    {
+      "codigo_base": "PD-ARTCMP",
+      "numero": "PD-05",
+      "override": {
+        "constatacao": "A ART nº 2620261607007 indica execução de reforma de edificação com 52 m², enquanto o memorial descreve exclusivamente reforma de banheiro, cuja área é tipicamente inferior à metragem informada."
+      }
+    },
+    {"codigo_base": "PD-EXEC", "numero": "PD-06"}
+  ],
+  "quadro_resumo": [
+    {"ref": "PD-01", "tema": "Impermeabilização", "pendencia": "Procedimento não detalhado"},
+    {"ref": "PD-02", "tema": "Teste de Estanqueidade", "pendencia": "Ausente"},
+    {"ref": "PD-03", "tema": "Croqui da Área", "pendencia": "Ausente"},
+    {"ref": "PD-04", "tema": "Declaração — Alvenaria Estrutural", "pendencia": "Ausente"},
+    {"ref": "PD-05", "tema": "ART × Escopo", "pendencia": "Divergência a compatibilizar"},
+    {"ref": "PD-06", "tema": "Detalhamento Executivo", "pendencia": "Insuficiente"}
+  ],
+  "conclusao": {
+    "status": "NÃO APROVADO",
+    "texto_conclusao": "Com base na análise das 6 pendências identificadas, a Diagnóstika Engenharia conclui que a solicitação de reforma da unidade 304, Bloco 07 do Condomínio Portal Primavera, na forma documentalmente apresentada, encontra-se NÃO APROVADA neste momento, por insuficiência documental e ausência de detalhamentos técnicos necessários à análise segura por parte da administração condominial.",
+    "texto_ressalva": "A presente conclusão não implica juízo sobre a impossibilidade técnica da reforma, tampouco sobre a conduta do responsável técnico contratado pelo proprietário. Trata-se de manifestação restrita ao plano documental, sendo a solicitação passível de reanálise mediante apresentação das complementações listadas neste parecer.",
+    "encaminhamentos": [
+      "Não autorizar o início dos serviços com base nos documentos atualmente apresentados.",
+      "Encaminhar este parecer ao proprietário e ao responsável técnico, solicitando o atendimento integral das 6 pendências.",
+      "Submeter a documentação complementar a nova análise técnica antes da liberação dos serviços."
+    ]
+  }
+}

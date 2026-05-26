@@ -1,0 +1,180 @@
+{
+  "_meta": {
+    "descricao": "Catálogo oficial de normas técnicas usadas pela Diagnóstika Engenharia.",
+    "versao_catalogo": "1.0",
+    "data_criacao": "2026-05-26",
+    "ultima_verificacao_geral": null,
+    "fonte_verificacao_recomendada": "https://www.abntcatalogo.com.br",
+    "politica": "TODO parecer/laudo deve citar a versão vigente. Se status != 'vigente_confirmada', emitir alerta no documento.",
+    "status_possiveis": [
+      "vigente_confirmada",
+      "verificacao_pendente",
+      "potencialmente_desatualizada",
+      "revogada"
+    ]
+  },
+
+  "NBR 6118": {
+    "titulo": "Projeto de estruturas de concreto — Procedimento",
+    "versao_vigente": "2023",
+    "citacao_oficial": "ABNT NBR 6118:2023",
+    "arquivo_local": "Normas/NBR_6118_2023_Projeto_de_Estruturas_de_C.pdf",
+    "status": "vigente_confirmada",
+    "ultima_verificacao": "2026-05-26",
+    "fonte_verificacao": "Conhecimento técnico — revisão 2023 publicada e vigente",
+    "observacoes": "Substituiu NBR 6118:2014.",
+    "aplicacao_tipica": "Pareceres sobre estruturas de concreto armado, lajes, vigas, pilares."
+  },
+
+  "NBR 16280": {
+    "titulo": "Reforma em edificações — Sistema de gestão de reformas — Requisitos",
+    "versao_vigente": "2014 + Emenda 01:2015",
+    "citacao_oficial": "ABNT NBR 16280:2014",
+    "arquivo_local": "Normas/NBR-16280 Reforma de Edificação - Sistema de Gestão de Reformas - Requisitos.pdf",
+    "arquivo_emenda": "Normas/NBR 16280 - EMENDA 01 - 2015.pdf",
+    "status": "vigente_confirmada",
+    "ultima_verificacao": "2026-05-26",
+    "fonte_verificacao": "Conhecimento técnico — NBR 16280:2014 segue vigente com Emenda 01:2015",
+    "observacoes": "Citar sempre como 'ABNT NBR 16280:2014' (a emenda complementa).",
+    "aplicacao_tipica": "Análise documental de reformas, plano de gestão de reformas, responsabilidades."
+  },
+
+  "NBR 9575": {
+    "titulo": "Impermeabilização — Seleção e projeto",
+    "versao_vigente": "2010",
+    "citacao_oficial": "ABNT NBR 9575:2010",
+    "arquivo_local_obsoleto": "Normas/NBR 9575 - 2003 - NB 987 - Projeto de impermeabilizacao.pdf",
+    "arquivo_local_vigente": null,
+    "status": "potencialmente_desatualizada",
+    "ultima_verificacao": "2026-05-26",
+    "fonte_verificacao": "Conhecimento técnico — NBR 9575:2010 substituiu a versão 2003",
+    "observacoes": "⚠️ ARQUIVO LOCAL ESTÁ NA VERSÃO 2003 (REVOGADA). Baixar/adquirir versão 2010 vigente. Verificar se há revisão 2024+.",
+    "acao_requerida": "Substituir o PDF local pela versão NBR 9575:2010 vigente.",
+    "aplicacao_tipica": "Pareceres sobre impermeabilização de áreas molhadas, lajes, fachadas."
+  },
+
+  "NBR 9574": {
+    "titulo": "Execução de impermeabilização",
+    "versao_vigente": "2008",
+    "citacao_oficial": "ABNT NBR 9574:2008",
+    "arquivo_local": "Normas/NBR-9574-2008 Execução de impermeabilização.pdf",
+    "status": "vigente_confirmada",
+    "ultima_verificacao": "2026-05-26",
+    "fonte_verificacao": "Conhecimento técnico — versão 2008 segue vigente",
+    "observacoes": "Aplicar em conjunto com NBR 9575 (projeto).",
+    "aplicacao_tipica": "Procedimentos executivos de impermeabilização, teste de estanqueidade."
+  },
+
+  "NBR 5410": {
+    "titulo": "Instalações elétricas de baixa tensão",
+    "versao_vigente": "2004 + Emendas 1 e 2",
+    "citacao_oficial": "ABNT NBR 5410:2004",
+    "arquivo_local": "Normas/NBR-5410 - Instalações Elétricas de Baixa Tensão.pdf",
+    "status": "verificacao_pendente",
+    "ultima_verificacao": null,
+    "fonte_verificacao": null,
+    "observacoes": "Norma de 2004 segue vigente mas tem 2 emendas. Verificar se há revisão recente pela ABNT.",
+    "acao_requerida": "Confirmar no catálogo ABNT se há revisão posterior a 2008.",
+    "aplicacao_tipica": "Pareceres sobre instalações elétricas, ramais, quadros, aterramento."
+  },
+
+  "NBR 15575": {
+    "titulo": "Edificações habitacionais — Desempenho",
+    "partes": [
+      "Parte 1: Requisitos gerais",
+      "Parte 2: Sistemas estruturais",
+      "Parte 3: Sistemas de pisos",
+      "Parte 4: Sistemas de vedações verticais internas e externas",
+      "Parte 5: Sistemas de coberturas",
+      "Parte 6: Sistemas hidrossanitários"
+    ],
+    "versao_vigente": "2021",
+    "citacao_oficial": "ABNT NBR 15575-X:2021",
+    "arquivo_local": "Normas/NBR 15575-1.pdf",
+    "status": "verificacao_pendente",
+    "ultima_verificacao": null,
+    "fonte_verificacao": null,
+    "observacoes": "⚠️ Arquivo local não tem data no nome. Revisão 2021 é a vigente. Confirmar.",
+    "acao_requerida": "Abrir o PDF local e checar a data da norma. Atualizar para 2021 se for antiga.",
+    "aplicacao_tipica": "Análise de desempenho de edificações habitacionais, requisitos mínimos."
+  },
+
+  "NBR 7584": {
+    "titulo": "Concreto endurecido — Avaliação da dureza superficial pelo esclerômetro de reflexão — Método de ensaio",
+    "versao_vigente": "2012",
+    "citacao_oficial": "ABNT NBR 7584:2012",
+    "arquivo_local": "Normas/NBR 7584 - 12 Concreto endurecido - avaliação da dureza superficial pelo esclerômetro de reflexão - Método de Ensaio.pdf",
+    "status": "vigente_confirmada",
+    "ultima_verificacao": "2026-05-26",
+    "fonte_verificacao": "Conhecimento técnico — versão 2012 segue vigente",
+    "observacoes": "Aplicar em laudos de ensaios não destrutivos de concreto.",
+    "aplicacao_tipica": "Ensaios esclerométricos em estruturas existentes."
+  },
+
+  "NBR 10339": {
+    "titulo": "Piscina — Projeto, execução e manutenção",
+    "versao_vigente": "2018",
+    "citacao_oficial": "ABNT NBR 10339:2018",
+    "arquivo_local": "Normas/NBR 10339 Piscinas, Projeto, Execução e Manutenção.pdf",
+    "status": "verificacao_pendente",
+    "ultima_verificacao": null,
+    "fonte_verificacao": null,
+    "observacoes": "Arquivo local sem data no nome. Versão 2018 é a mais recente que conheço.",
+    "acao_requerida": "Verificar no catálogo ABNT se há revisão pós-2018.",
+    "aplicacao_tipica": "Laudos e pareceres sobre piscinas condominiais."
+  },
+
+  "IBAPE Inspeção Predial": {
+    "titulo": "Norma de Inspeção Predial Nacional",
+    "versao_vigente": "2023 (revisão IBAPE Nacional)",
+    "citacao_oficial": "IBAPE/Nacional — Norma de Inspeção Predial Nacional, 2023",
+    "arquivo_local": "Normas/norma_de_inspecao_predial.pdf",
+    "status": "verificacao_pendente",
+    "ultima_verificacao": null,
+    "fonte_verificacao": null,
+    "observacoes": "IBAPE publicou revisão em 2023. Verificar versão do arquivo local.",
+    "acao_requerida": "Confirmar versão local e baixar a revisão 2023 se necessário.",
+    "aplicacao_tipica": "Laudos de inspeção predial."
+  },
+
+  "_normas_referenciadas_mas_nao_locais": {
+    "descricao": "Normas frequentemente citadas em pareceres mas que ainda não estão na pasta Normas/ local.",
+    "lista": [
+      {
+        "codigo": "NBR 5674",
+        "titulo": "Manutenção de edificações — Requisitos para o sistema de gestão de manutenção",
+        "versao_vigente_provavel": "2012",
+        "status": "ausente_local",
+        "acao": "Considerar adquirir — relevante para Diagnóstika"
+      },
+      {
+        "codigo": "NBR 14037",
+        "titulo": "Diretrizes para elaboração de manuais de uso, operação e manutenção das edificações — Requisitos",
+        "versao_vigente_provavel": "2011 + Emenda",
+        "status": "ausente_local",
+        "acao": "Considerar adquirir"
+      },
+      {
+        "codigo": "NBR 13755",
+        "titulo": "Revestimentos cerâmicos de fachadas e paredes externas com utilização de argamassa colante — Projeto, execução e inspeção",
+        "versao_vigente_provavel": "2017",
+        "status": "ausente_local",
+        "acao": "Relevante para condomínios — considerar adquirir"
+      },
+      {
+        "codigo": "NBR 7200",
+        "titulo": "Execução de revestimento de paredes e tetos de argamassas inorgânicas",
+        "versao_vigente_provavel": "1998",
+        "status": "ausente_local",
+        "acao": "Considerar adquirir"
+      },
+      {
+        "codigo": "NBR 6122",
+        "titulo": "Projeto e execução de fundações",
+        "versao_vigente_provavel": "2019",
+        "status": "ausente_local",
+        "acao": "Considerar adquirir"
+      }
+    ]
+  }
+}
