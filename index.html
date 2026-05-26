@@ -521,13 +521,20 @@ function renderDemandas(){
     const c=CONDOS[d.condo_id]||{nome:d.condo_id,cls:'mc'};
     const dt=new Date(d.created_at);
     const fotos=d.fotos||[];
-    const anexosHtml=fotos.length?'<div class="dem-anexos-grid">'+fotos.map((a,i)=>{
-      if(a.tipo==='video'){
+    const fotosImg=fotos.filter(a=>a && typeof a==='object' && a.tipo!=='documento');
+    const fotosDoc=fotos.filter(a=>a && typeof a==='object' && a.tipo==='documento');
+    const anexosHtml=fotosImg.length?'<div class="dem-anexos-grid">'+fotos.map((a,i)=>{
+      if(a && typeof a==='object' && a.tipo==='documento') return '';
+      if(a && a.tipo==='video'){
         return '<div style="position:relative;cursor:pointer" onclick="abrirAnexoAdmin(\''+d.id+'\','+i+')"><video src="'+a.url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;background:#000" muted></video><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;text-shadow:0 2px 8px rgba(0,0,0,.8);pointer-events:none">▶</div></div>';
       }
       const url=typeof a==='string'?a:a.url;
       return '<img src="'+url+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;cursor:pointer" onclick="abrirAnexoAdmin(\''+d.id+'\','+i+')">';
     }).join('')+'</div>':'';
+    const docsHtml=fotosDoc.length?`<div style="margin-top:6px;padding:8px 10px;background:rgba(21,91,103,.06);border:1px solid var(--gray2);border-radius:6px">
+      <div style="font-size:10.5px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">📎 ${fotosDoc.length} documento(s) anexado(s)</div>
+      ${fotosDoc.map(doc=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px"><span>📄</span><a href="${doc.url}" download="${doc.nome||'documento'}" target="_blank" style="color:var(--teal);text-decoration:none;font-weight:600">${(doc.nome||'arquivo').substring(0,50)}</a><span style="color:var(--text2);font-size:10.5px">${doc.tamanho?Math.round(doc.tamanho/1024)+' KB':''}</span></div>`).join('')}
+    </div>`:'';
     const bannerHtml=d.data_programada?`<div class="dem-banner">
       <span class="label">📅 Programado pela Diagnóstika</span>
       <div class="data">${d.tipo_programado||'Visita'} em ${fmtBR(d.data_programada)}${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</div>
@@ -548,7 +555,32 @@ function renderDemandas(){
           ${d.protocolo?`<div class="dem-protocolo" onclick="copiarProtocoloAdm('${d.protocolo}')" title="Clique para copiar">📋 ${d.protocolo}</div>`:''}
           <div class="dem-titulo">${d.titulo}</div>
           <div class="dem-meta"><span class="pill p-${c.cls}">${c.nome}</span> · ${cats[d.categoria]||d.categoria} · ${urgs[d.urgencia]||d.urgencia}${fotos.length?' · 📎 '+fotos.length+' anexo(s)':''}</div>
-          ${isMorador?`<div style="margin-top:5px;padding:6px 10px;background:rgba(125,60,152,.10);border-left:3px solid #7D3C98;border-radius:0 6px 6px 0;font-size:12px"><b style="color:#7D3C98">🏠 MORADOR:</b> ${d.morador_nome||'—'} · ${d.morador_apto||'—'} ${d.morador_telefone?`· <a href="${linkWhatsApp(d)}" target="_blank" style="color:#1B8A4A;font-weight:700;text-decoration:none">📱 ${d.morador_telefone}</a>`:''}</div>`:''}
+          ${isMorador?(function(){
+            const det=d.detalhes||{};
+            const sub=det.subtipo_morador;
+            const subLbl={reforma:'🏗️ Reforma',duvida:'❓ Dúvida técnica',corretiva:'🔧 Problema na unidade',art:'📜 SOLICITAÇÃO DE ART'}[sub]||'';
+            let extra='';
+            if(sub==='reforma'){
+              const tipos={'pisos-paredes':'Revestimentos','hidraulica':'Hidráulica','eletrica':'Elétrica','gas':'Gás','ar-condicionado':'Ar-condicionado','rebaixamento':'Rebaixamento de teto','bancadas':'Bancadas','tela-protecao':'Tela','contrapiso':'Contrapiso','outros':'Outros'};
+              if(det.tipo_servico) extra += `<div style="margin-top:3px"><b>Tipo:</b> ${tipos[det.tipo_servico]||det.tipo_servico}</div>`;
+              if(det.tem_rt){
+                extra += `<div><b>Já tem RT:</b> ${det.rt_nome||'(nome não informado)'} ${det.rt_registro?'· '+det.rt_registro:''}</div>`;
+              } else {
+                extra += `<div style="color:#A87826"><b>⚠ Sem RT</b> — pode contratar a Diagnóstika para emissão de ART</div>`;
+              }
+            } else if(sub==='art'){
+              const tipos={'reforma-completa':'Reforma completa','banheiro':'Banheiro','cozinha':'Cozinha','hidraulica':'Hidráulica','eletrica':'Elétrica','ar-condicionado':'Ar-condicionado','outros':'Outros'};
+              const prazos={'imediato':'⚡ Imediato (esta semana)','15dias':'Em 15 dias','30dias':'Em 30 dias','60dias':'Em até 60 dias','indefinido':'Indefinido'};
+              if(det.art_tipo_obra) extra += `<div style="margin-top:3px"><b>Obra:</b> ${tipos[det.art_tipo_obra]||det.art_tipo_obra}</div>`;
+              if(det.art_prazo) extra += `<div><b>Prazo:</b> ${prazos[det.art_prazo]||det.art_prazo}</div>`;
+              extra += `<div style="margin-top:4px;padding:4px 8px;background:rgba(212,162,76,.15);border-radius:4px;font-weight:700;color:#A87826">💰 Oportunidade — emitir orçamento de ART</div>`;
+            }
+            return `<div style="margin-top:5px;padding:8px 10px;background:rgba(125,60,152,.10);border-left:3px solid #7D3C98;border-radius:0 6px 6px 0;font-size:12px">
+              <div><b style="color:#7D3C98">🏠 MORADOR:</b> ${d.morador_nome||'—'} · ${d.morador_apto||'—'} ${d.morador_telefone?`· <a href="${linkWhatsApp(d)}" target="_blank" style="color:#1B8A4A;font-weight:700;text-decoration:none">📱 ${d.morador_telefone}</a>`:''}</div>
+              ${subLbl?`<div style="margin-top:3px;color:#7D3C98;font-weight:700">${subLbl}</div>`:''}
+              ${extra}
+            </div>`;
+          })():''}
           <div class="dem-ts">${dt.toLocaleString('pt-BR')}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -562,6 +594,7 @@ function renderDemandas(){
           ${excluida?`<div style="background:rgba(192,0,0,.06);border-left:3px solid var(--red);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12px;margin-bottom:8px"><b style="color:var(--red);font-size:11px;text-transform:uppercase;letter-spacing:.3px">🗑 Demanda excluída</b><div style="margin-top:4px;color:var(--text)">Por <b>${d.deletada_por_nome||'—'}</b> em ${new Date(d.deletada_em).toLocaleString('pt-BR')}</div>${d.deletada_motivo?`<div style="margin-top:3px;color:var(--text2);font-style:italic">Motivo: "${d.deletada_motivo}"</div>`:''}</div>`:''}
           ${d.descricao?'<div class="dem-desc truncavel">'+d.descricao+'<span class="ver-mais"></span></div>':''}
           ${anexosHtml}
+          ${docsHtml}
         </div>
         ${temSide?`<div class="dem-content-side">${bannerHtml}${respostaHtml}</div>`:''}
       </div>
