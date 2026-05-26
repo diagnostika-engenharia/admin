@@ -1,0 +1,35 @@
+name: Supabase Keep-Alive
+
+# Faz um ping no Supabase a cada 3 dias para impedir o auto-pause
+# do plano free (que pausa o projeto após 7 dias sem atividade).
+# Cron: 09:17 UTC (= 06:17 BRT) a cada 3 dias.
+
+on:
+  schedule:
+    - cron: '17 9 */3 * *'
+  workflow_dispatch:  # permite rodar manual pelo botão
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST
+        run: |
+          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
+            "https://fimmjgdwhifsrrbreche.supabase.co/rest/v1/app_config?select=key&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpbW1qZ2R3aGlmc3JyYnJlY2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NzU2NDIsImV4cCI6MjA5NTE1MTY0Mn0.eAmMS95M8BkfX3NCcOtHnhKWXy0jkvXwSGEoqv_Q21Q")
+          echo "HTTP $STATUS"
+          cat /tmp/resp.json
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
+            echo "✓ Supabase respondeu — projeto ativo"
+            exit 0
+          fi
+          echo "❌ Supabase pode estar pausado ou offline"
+          exit 1
+
+      - name: Ping Auth endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://fimmjgdwhifsrrbreche.supabase.co/auth/v1/health" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpbW1qZ2R3aGlmc3JyYnJlY2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NzU2NDIsImV4cCI6MjA5NTE1MTY0Mn0.eAmMS95M8BkfX3NCcOtHnhKWXy0jkvXwSGEoqv_Q21Q")
+          echo "Auth health HTTP $STATUS"
