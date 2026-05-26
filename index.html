@@ -480,13 +480,13 @@ function renderDemandas(){
       </div>
       <div style="font-size:11px;color:var(--gray4);margin-bottom:8px">${dt.toLocaleString('pt-BR')}</div>
       ${d.descricao?'<div style="font-size:13px;color:var(--text);line-height:1.5;background:var(--gray);padding:10px 12px;border-radius:6px;margin-bottom:8px;white-space:pre-wrap">'+d.descricao+'</div>':''}
-      ${anexosHtml}
-      ${d.data_programada?`<div style="background:rgba(21,91,103,.06);border-left:3px solid var(--teal);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px">
-        <b style="color:var(--teal);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">📅 Programado pela Diagnóstika</b>
-        <div style="font-size:13px;font-weight:700">${d.tipo_programado||'Visita'} em <span style="color:var(--teal)">${fmtBR(d.data_programada)}</span>${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</div>
-        ${d.descricao_programada?'<div style="font-size:11.5px;color:var(--text2);margin-top:3px">'+d.descricao_programada+'</div>':''}
-        ${d.programado_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">Programado em '+new Date(d.programado_em).toLocaleString('pt-BR')+(d.programado_por?' por '+d.programado_por:'')+'</div>':''}
+      ${d.data_programada?`<div style="background:rgba(13,60,68,.08);border-left:3px solid #0D3C44;padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px;max-width:300px;float:right;clear:both;margin-left:10px">
+        <b style="color:#0D3C44;font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">📅 Programado pela Diagnóstika</b>
+        <div style="font-size:13px;font-weight:700;color:#0D3C44">${d.tipo_programado||'Visita'} em ${fmtBR(d.data_programada)}${d.hora_programada?' às '+d.hora_programada.substring(0,5):''}</div>
+        ${d.descricao_programada?'<div style="font-size:11.5px;color:var(--text);margin-top:3px">'+d.descricao_programada+'</div>':''}
+        ${d.programado_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">Confirmado em '+new Date(d.programado_em).toLocaleString('pt-BR')+(d.programado_por?' por '+d.programado_por:'')+'</div>':''}
       </div>`:''}
+      ${anexosHtml}
       ${d.resposta?'<div style="background:rgba(27,138,74,.08);border-left:3px solid var(--green);padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;margin-bottom:8px"><b style="color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px">✅ Resposta enviada</b>'+d.resposta+(d.respondido_em?'<div style="font-size:10px;color:var(--text2);margin-top:5px">'+new Date(d.respondido_em).toLocaleString('pt-BR')+(d.respondido_por?' · '+d.respondido_por:'')+'</div>':'')+'</div>':''}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button onclick="responderDemanda('${d.id}')" style="background:var(--teal);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💬 ${d.resposta?'Atualizar resposta':'Responder'}</button>
