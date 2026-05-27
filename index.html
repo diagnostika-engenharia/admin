@@ -267,14 +267,29 @@ tr.row-click:hover{background:var(--gray)}
 
   <div id="sec-agenda" style="display:none">
     <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <div style="font-weight:700;font-size:14px;color:var(--text)">📅 Agenda dos Condomínios</div>
-      <select id="agd-filtro-condo" onchange="renderAgendaAdm()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:180px">
-        <option value="">Selecione um condomínio…</option>
+      <div style="font-weight:700;font-size:14px;color:var(--text);margin-right:6px">📅 Agenda Unificada</div>
+      <select id="agd-filtro-condo" onchange="renderAgendaAdm()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px;flex:1;min-width:160px">
+        <option value="">Todos condomínios</option>
       </select>
-      <button onclick="abrirModalNovoEvento()" id="btn-novo-evt" style="padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;font-size:12px;display:none">➕ Novo evento</button>
+      <select id="agd-filtro-tipo" onchange="renderAgendaAdm()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px">
+        <option value="">Todos os tipos</option>
+        <option value="pmp">🛠 Visitas PMP (rotina)</option>
+        <option value="demanda">💬 Demandas programadas</option>
+        <option value="evento">📌 Eventos pontuais</option>
+      </select>
+      <select id="agd-filtro-mes" onchange="renderAgendaAdm()" style="padding:7px 10px;border:1px solid var(--gray2);border-radius:6px;font-size:13px">
+        <option value="">Próximos 60 dias</option>
+        <option value="todos">Ano inteiro</option>
+        <option value="passados">Já realizados</option>
+        <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+        <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+        <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+        <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+      </select>
+      <button onclick="abrirModalNovoEvento()" id="btn-novo-evt" style="padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;font-size:12px">➕ Novo evento</button>
       <button onclick="carregarAgendaAdm()" style="padding:7px 14px;border:none;border-radius:6px;background:#fff;color:var(--text2);font-weight:700;cursor:pointer;font-size:12px;border:1px solid var(--gray2)">🔄 Atualizar</button>
     </div>
-    <div id="agenda-lista"><div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio para ver e gerenciar a agenda</div></div>
+    <div id="agenda-lista"><div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">⏳ Carregando agenda unificada…</div></div>
   </div>
 </main>
 
@@ -356,124 +371,261 @@ function trocarSecao(s){
     if(tab){ tab.style.background=s===t?'var(--teal)':'transparent'; tab.style.color=s===t?'#fff':'var(--text2)'; }
   });
   if(s==='demandas') carregarDemandas();
-  if(s==='agenda') inicializarAgendaAdm();
+  if(s==='agenda'){ inicializarAgendaAdm(); carregarAgendaAdm(); }
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// AGENDA — gestão de eventos por condomínio
+// AGENDA UNIFICADA — visitas PMP + demandas programadas + eventos pontuais
 // ════════════════════════════════════════════════════════════════════════
-let _agendaCondo=null, _eventosCondo=[];
+let _agendaCondo=null;     // null = todos os condos
+let _eventosTodos = {};    // { condo_id: [eventos] }
+let _demandasProgAdm = []; // todas demandas com data_programada
+
+// Calendário fixo de visitas PMP (mesma lógica do PMP)
+function getVisitDatesAno(condoId){
+  const set=new Set();
+  const ano=new Date().getFullYear();
+  const dateKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if(condoId==='monte-carlo'){
+    let d=new Date(ano,4,27); while(d.getFullYear()===ano){set.add(dateKey(d));d.setDate(d.getDate()+7);}
+  } else if(condoId==='morada-morumbi'){
+    let d=new Date(ano,4,27); while(d.getFullYear()===ano){set.add(dateKey(d));d.setDate(d.getDate()+14);}
+  } else if(condoId==='residencial-santa-clara'){
+    let d=new Date(ano,0,14); while(d.getFullYear()===ano){set.add(dateKey(d));d.setDate(d.getDate()+14);}
+  } else if(condoId==='portal-primavera'){
+    let d=new Date(ano,0,14); while(d.getFullYear()===ano){set.add(dateKey(d));d.setDate(d.getDate()+14);}
+  } else if(condoId==='jardins-do-malta'){
+    let d=new Date(ano,0,7); while(d.getFullYear()===ano){set.add(dateKey(d));d.setDate(d.getDate()+14);}
+  }
+  return set;
+}
+const FREQ_LABEL = {'monte-carlo':'Semanal','morada-morumbi':'Quinzenal','residencial-santa-clara':'Quinzenal','portal-primavera':'Quinzenal','jardins-do-malta':'Quinzenal','condominio-teste':'Sob demanda'};
 
 function inicializarAgendaAdm(){
   const sel=document.getElementById('agd-filtro-condo');
   if(sel.options.length<=1){
-    sel.innerHTML='<option value="">Selecione um condomínio…</option>'+Object.entries(CONDOS).map(([k,c])=>`<option value="${k}">${c.nome}</option>`).join('');
+    sel.innerHTML='<option value="">Todos condomínios</option>'+Object.entries(CONDOS).map(([k,c])=>`<option value="${k}">${c.nome}</option>`).join('');
   }
 }
 
-let _demandasProgramadasAdm=[];
 async function carregarAgendaAdm(){
-  if(!_agendaCondo){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio</div>'; return; }
-  document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">⏳ Carregando…</div>';
-  const [evResp, demResp]=await Promise.all([
-    sb.from('app_config').select('*').eq('key','eventos_'+_agendaCondo).maybeSingle(),
-    sb.from('demandas').select('*').eq('condo_id',_agendaCondo).is('deletada_em',null).not('data_programada','is',null)
+  document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">⏳ Carregando agenda…</div>';
+  const [cfgResp, demResp]=await Promise.all([
+    sb.from('app_config').select('*').like('key','eventos_%'),
+    sb.from('demandas').select('*').is('deletada_em',null).not('data_programada','is',null)
   ]);
-  if(evResp.error){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;color:var(--red);border-radius:10px">Erro: '+evResp.error.message+'</div>'; return; }
-  _eventosCondo=(evResp.data?.value||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-  _demandasProgramadasAdm=demResp.data||[];
+  if(cfgResp.error){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:30px;color:var(--red);border-radius:10px">Erro: '+cfgResp.error.message+'</div>'; return; }
+  _eventosTodos = {};
+  (cfgResp.data||[]).forEach(row=>{
+    const condoId=row.key.replace('eventos_','');
+    _eventosTodos[condoId] = (row.value||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  });
+  _demandasProgAdm = demResp.data||[];
   renderAgendaListaAdm();
 }
 
 async function renderAgendaAdm(){
-  const condoId=document.getElementById('agd-filtro-condo').value;
-  _agendaCondo=condoId||null;
-  document.getElementById('btn-novo-evt').style.display=_agendaCondo?'inline-block':'none';
-  if(!_agendaCondo){ document.getElementById('agenda-lista').innerHTML='<div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Selecione um condomínio</div>'; return; }
-  await carregarAgendaAdm();
+  _agendaCondo = document.getElementById('agd-filtro-condo').value || null;
+  renderAgendaListaAdm();
 }
 
 function renderAgendaListaAdm(){
   const el=document.getElementById('agenda-lista');
-  const c=CONDOS[_agendaCondo]||{nome:_agendaCondo,cor:'#155B67'};
-  const totalItens=_eventosCondo.length+_demandasProgramadasAdm.length;
-  if(!totalItens){
-    el.innerHTML='<div style="background:#fff;padding:30px;text-align:center;color:var(--text2);border-radius:10px">Nenhum evento agendado em <b>'+c.nome+'</b><br><small>Use o botão <b>➕ Novo evento</b> acima para adicionar</small></div>';
+  const fTipo = document.getElementById('agd-filtro-tipo')?.value || '';
+  const fMes = document.getElementById('agd-filtro-mes')?.value || '';
+  const hoje = new Date().toISOString().slice(0,10);
+  const tiposEv = {ensaio:'🧪',laudo:'📋',inspeção:'🔍','inspeção especial':'🔍',perícia:'⚖️',obra:'🏗️',reunião:'👥',limpeza:'🧹',documental:'📑',outro:'📌',evento:'📌'};
+
+  // Coletar todos os itens das 3 fontes
+  const items = [];
+  const condosAlvo = _agendaCondo ? [_agendaCondo] : Object.keys(CONDOS);
+
+  condosAlvo.forEach(cid => {
+    const c = CONDOS[cid] || {nome:cid, cor:'#155B67', cls:'mc'};
+
+    // 1) Visitas PMP rotineiras
+    const visits = getVisitDatesAno(cid);
+    visits.forEach(dt => {
+      items.push({
+        kind: 'pmp', data: dt, condoId: cid, condo: c,
+        titulo: 'Visita técnica de manutenção preventiva',
+        descricao: 'Rotina ' + (FREQ_LABEL[cid]||'').toLowerCase()+' · NBR 5674'
+      });
+    });
+
+    // 2) Eventos pontuais
+    (_eventosTodos[cid]||[]).forEach(ev => {
+      items.push({
+        kind: 'evento', data: ev.data, hora: ev.hora, condoId: cid, condo: c,
+        id: ev.id, titulo: ev.titulo, descricao: ev.descricao, tipo: ev.tipo
+      });
+    });
+  });
+
+  // 3) Demandas programadas (já vêm filtradas)
+  _demandasProgAdm.forEach(d => {
+    if(_agendaCondo && d.condo_id !== _agendaCondo) return;
+    items.push({
+      kind: 'demanda', data: d.data_programada, hora: d.hora_programada,
+      condoId: d.condo_id, condo: CONDOS[d.condo_id] || {nome:d.condo_id, cor:'#0D3C44', cls:'mc'},
+      titulo: d.titulo, descricao: d.descricao_programada,
+      tipo: d.tipo_programado||'Demanda', protocolo: d.protocolo,
+      demanda_id: d.id, dem_status: d.status, dem_urgencia: d.urgencia,
+      origem: d.origem
+    });
+  });
+
+  // Filtros
+  let filtrados = items;
+  if(fTipo) filtrados = filtrados.filter(i => i.kind === fTipo);
+  if(fMes === 'todos') {
+    // sem filtro de data
+  } else if(fMes === 'passados') {
+    filtrados = filtrados.filter(i => i.data < hoje);
+  } else if(fMes) {
+    filtrados = filtrados.filter(i => i.data && i.data.substring(5,7) === fMes);
+  } else {
+    // Padrão: próximos 60 dias
+    const limite = new Date(); limite.setDate(limite.getDate()+60);
+    const limiteStr = limite.toISOString().slice(0,10);
+    filtrados = filtrados.filter(i => i.data >= hoje && i.data <= limiteStr);
+  }
+
+  filtrados.sort((a,b)=>(a.data||'').localeCompare(b.data||'') || (a.hora||'99').localeCompare(b.hora||'99'));
+
+  if(!filtrados.length){
+    el.innerHTML='<div style="background:#fff;padding:40px;text-align:center;color:var(--text2);border-radius:10px">Nenhum item na agenda com os filtros atuais<br><small>Tente "Ano inteiro" ou outro mês</small></div>';
     return;
   }
-  const tipos={ensaio:'🧪',laudo:'📋',inspeção:'🔍','inspeção especial':'🔍',perícia:'⚖️',obra:'🏗️',reunião:'👥',limpeza:'🧹',documental:'📑',outro:'📌',evento:'📌'};
-  const hoje=new Date().toISOString().slice(0,10);
 
-  // Mistura eventos + demandas programadas em ordem cronológica
-  const todos=[
-    ..._eventosCondo.map(e=>({...e, _kind:'evento'})),
-    ..._demandasProgramadasAdm.map(d=>({
-      _kind:'demanda',
-      data:d.data_programada, hora:d.hora_programada,
-      titulo:d.titulo, descricao:d.descricao_programada,
-      tipo:d.tipo_programado||'Demanda', protocolo:d.protocolo,
-      demanda_id:d.id, dem_status:d.status, dem_urgencia:d.urgencia
-    }))
-  ].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  // Contadores
+  const cnt = {pmp:0, demanda:0, evento:0};
+  filtrados.forEach(i => cnt[i.kind]++);
 
-  el.innerHTML='<div style="background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
-    +'<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📅 '+c.nome+' — '+_eventosCondo.length+' evento(s) + '+_demandasProgramadasAdm.length+' demanda(s) programada(s)</div>'
-    +todos.map(e=>{
-      if(e._kind==='demanda'){
-        const [y,mo,d]=(e.data||'').split('-').map(Number);
-        const dt=new Date(y,(mo||1)-1,d||1);
-        const passou=e.data<hoje;
-        return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray2);${passou?'opacity:.6':''}">
-          <div style="text-align:center;width:50px;flex-shrink:0;background:#0D3C44;color:#fff;border-radius:8px;padding:6px 4px">
-            <div style="font-size:18px;font-weight:800;line-height:1">${String(d||'').padStart(2,'0')}</div>
-            <div style="font-size:9px;text-transform:uppercase;margin-top:2px;opacity:.9">${['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][mo||0]}</div>
-            <div style="font-size:8px;margin-top:2px;opacity:.7">${y||''}</div>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="background:#0D3C44;color:#fff;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">📅 DEMANDA</span><span style="font-size:10.5px;color:var(--text2);font-family:'SF Mono',Menlo,Consolas,monospace">${e.protocolo||''}</span>${e.hora?'<span style="font-size:11px;color:#0D3C44;font-weight:700">⏰ '+e.hora.substring(0,5)+'</span>':''}</div>
-            <div style="font-size:13.5px;font-weight:700;color:var(--text);margin-top:3px">${e.tipo}: ${e.titulo}</div>
-            ${e.descricao?'<div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.4">'+e.descricao+'</div>':''}
-            <div style="font-size:10px;color:var(--gray4);margin-top:4px">${dt.toLocaleDateString('pt-BR',{weekday:'long'})}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <button onclick="trocarSecao('demandas');setTimeout(()=>document.getElementById('hist-adm-${e.demanda_id}')?.scrollIntoView({block:'center'}),100)" style="padding:6px 10px;background:#fff;border:1px solid #0D3C44;color:#0D3C44;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">👁 Ver chamado</button>
-            <button onclick="programarDemanda('${e.demanda_id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--teal);color:var(--teal);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">⏳ Reagendar</button>
-          </div>
-        </div>`;
+  // Agrupa por mês
+  const meses = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const mesesAbrev = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const porMes = {};
+  filtrados.forEach(i => {
+    const k = (i.data||'').substring(0,7);
+    if(!porMes[k]) porMes[k] = [];
+    porMes[k].push(i);
+  });
+
+  // Resumo
+  let html = `<div style="background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    <div style="font-size:13px;font-weight:700;color:var(--text)">📊 ${filtrados.length} ${filtrados.length===1?'item':'itens'} na agenda</div>
+    <span style="font-size:11px;background:rgba(125,60,152,.12);color:#5B0F87;padding:3px 9px;border-radius:8px;font-weight:700">🛠 ${cnt.pmp} PMP</span>
+    <span style="font-size:11px;background:rgba(13,60,68,.12);color:#0D3C44;padding:3px 9px;border-radius:8px;font-weight:700">💬 ${cnt.demanda} Demandas</span>
+    <span style="font-size:11px;background:rgba(212,162,76,.20);color:#A87826;padding:3px 9px;border-radius:8px;font-weight:700">📌 ${cnt.evento} Eventos</span>
+  </div>`;
+
+  Object.keys(porMes).sort().forEach(mesKey => {
+    const [ano,mes] = mesKey.split('-').map(Number);
+    const itens = porMes[mesKey];
+    html += `<div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--gray2);padding-bottom:6px">
+        ${meses[mes]} ${ano} <span style="background:var(--gray);color:var(--text2);padding:1px 7px;border-radius:8px;font-size:10px">${itens.length}</span>
+      </div>`;
+
+    itens.forEach(i => {
+      const [y,mo,d] = (i.data||'').split('-').map(Number);
+      const dt = new Date(y, (mo||1)-1, d||1);
+      const passou = i.data < hoje;
+      const ehHoje = i.data === hoje;
+      const dow = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()];
+
+      let bgData, badge, ico, titulo, sub, acoes;
+      if(i.kind === 'pmp'){
+        bgData = i.condo.cor || '#7D3C98';
+        badge = `<span style="background:rgba(125,60,152,.12);color:#5B0F87;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">🛠 PMP · ROTINA</span>`;
+        ico = '🛠️';
+        titulo = i.titulo;
+        sub = i.descricao;
+        acoes = '';
+      } else if(i.kind === 'demanda'){
+        bgData = '#0D3C44';
+        const isMor = i.origem === 'morador';
+        badge = `<span style="background:#0D3C44;color:#fff;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">💬 ${isMor?'MORADOR':'DEMANDA'}</span>` +
+                (i.protocolo?` <span style="font-size:10px;color:var(--text2);font-family:'SF Mono',Menlo,Consolas,monospace">${i.protocolo}</span>`:'');
+        ico = isMor ? '🏠' : '💬';
+        titulo = `${i.tipo}: ${i.titulo}`;
+        sub = i.descricao;
+        acoes = `<button onclick="abrirDetalheDemanda('${i.demanda_id}')" style="padding:6px 10px;background:#fff;border:1px solid #0D3C44;color:#0D3C44;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">👁 Ver chamado</button>
+                 <button onclick="programarDemanda('${i.demanda_id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--teal);color:var(--teal);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">⏳ Reagendar</button>`;
+      } else { // evento
+        bgData = '#D4A24C';
+        const t = (i.tipo||'').toLowerCase();
+        ico = tiposEv[t] || '📌';
+        badge = `<span style="background:rgba(212,162,76,.20);color:#A87826;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px">📌 ${i.tipo||'EVENTO'}</span>`;
+        titulo = i.titulo;
+        sub = i.descricao;
+        acoes = `<button onclick="editarEventoAdm('${i.id}', '${i.condoId}')" style="padding:6px 10px;background:#fff;border:1px solid var(--teal);color:var(--teal);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✏️ Editar</button>
+                 <button onclick="removerEventoAdm('${i.id}', '${i.condoId}')" style="padding:6px 10px;background:#fff;border:1px solid var(--red);color:var(--red);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🗑 Excluir</button>`;
       }
-      const [y,mo,d]=(e.data||'').split('-').map(Number);
-      const dt=new Date(y,(mo||1)-1,d||1);
-      const passou=e.data<hoje;
-      const tipoIcon=tipos[(e.tipo||'').toLowerCase()]||'📌';
-      return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray2);${passou?'opacity:.6':''}">
-        <div style="text-align:center;width:50px;flex-shrink:0;background:${c.cor};color:#fff;border-radius:8px;padding:6px 4px">
+
+      const condoPill = !_agendaCondo ? `<span class="pill p-${i.condo.cls||'mc'}">${i.condo.short||i.condo.nome}</span>` : '';
+
+      html += `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray2);${passou?'opacity:.5':''}${ehHoje?'background:rgba(0,180,172,.04);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px':''}">
+        <div style="text-align:center;width:50px;flex-shrink:0;background:${bgData};color:#fff;border-radius:8px;padding:6px 4px">
           <div style="font-size:18px;font-weight:800;line-height:1">${String(d||'').padStart(2,'0')}</div>
-          <div style="font-size:9px;text-transform:uppercase;margin-top:2px;opacity:.9">${['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][mo||0]}</div>
-          <div style="font-size:8px;margin-top:2px;opacity:.7">${y||''}</div>
+          <div style="font-size:9px;text-transform:uppercase;margin-top:2px;opacity:.9">${mesesAbrev[mo||0]}</div>
+          <div style="font-size:8px;margin-top:2px;opacity:.7">${dow}</div>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:14px;font-weight:700;color:var(--text)">${tipoIcon} ${e.titulo||'—'}</span>${passou?'<span style="font-size:9px;background:var(--green);color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">✓ realizado</span>':''}</div>
-          ${e.descricao?'<div style="font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4">'+e.descricao+'</div>':''}
-          <div style="font-size:10px;color:var(--gray4);margin-top:4px">${dt.toLocaleDateString('pt-BR',{weekday:'long'})} · tipo: <b>${e.tipo||'—'}</b></div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${badge}
+            ${condoPill}
+            ${i.hora?`<span style="font-size:11px;color:${bgData};font-weight:700">⏰ ${i.hora.substring(0,5)}</span>`:''}
+            ${ehHoje?'<span style="background:var(--turq);color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:800">HOJE</span>':''}
+            ${passou?'<span style="background:var(--green);color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700">✓ realizado</span>':''}
+          </div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--text);margin-top:4px;line-height:1.3">${ico} ${titulo||'—'}</div>
+          ${sub?`<div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.4">${sub}</div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <button onclick="editarEventoAdm('${e.id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--teal);color:var(--teal);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✏️ Editar</button>
-          <button onclick="removerEventoAdm('${e.id}')" style="padding:6px 10px;background:#fff;border:1px solid var(--red);color:var(--red);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🗑 Excluir</button>
-        </div>
+        ${acoes?`<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">${acoes}</div>`:''}
       </div>`;
-    }).join('')+'</div>';
+    });
+
+    html += `</div>`;
+  });
+
+  el.innerHTML = html;
 }
 
-function abrirModalNovoEvento(){ abrirModalEventoAdm(null); }
-function editarEventoAdm(id){
-  const e=_eventosCondo.find(x=>x.id===id);
+function abrirModalNovoEvento(){
+  // Se o filtro já selecionou um condomínio, abre direto para ele;
+  // Senão, pede pra escolher antes.
+  if(_agendaCondo){
+    abrirModalEventoAdm(null, _agendaCondo);
+  } else {
+    const opts = Object.entries(CONDOS).map(([k,c])=>`<option value="${k}">${c.nome}</option>`).join('');
+    const ov=document.createElement('div');
+    ov.className='modal-overlay';
+    ov.id='pick-condo';
+    ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    ov.innerHTML=`<div class="modal" style="max-width:440px">
+      <button class="modal-close" onclick="document.getElementById('pick-condo').remove()">×</button>
+      <h2>➕ Novo Evento</h2>
+      <div class="sub" style="margin-bottom:14px">Em qual condomínio?</div>
+      <select id="pick-condo-sel" style="width:100%;padding:11px;border:1.5px solid var(--gray2);border-radius:8px;font-size:14px;margin-bottom:14px;font-family:inherit">
+        ${opts}
+      </select>
+      <button onclick="(()=>{const c=document.getElementById('pick-condo-sel').value;document.getElementById('pick-condo').remove();abrirModalEventoAdm(null,c);})()" style="width:100%;padding:11px;border:none;background:var(--teal);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">Continuar →</button>
+    </div>`;
+    document.body.appendChild(ov);
+  }
+}
+function editarEventoAdm(id, condoId){
+  const e=(_eventosTodos[condoId]||[]).find(x=>x.id===id);
   if(!e){ alert('Evento não encontrado'); return; }
-  abrirModalEventoAdm(e);
+  abrirModalEventoAdm(e, condoId);
 }
 
-function abrirModalEventoAdm(evento){
+function abrirModalEventoAdm(evento, condoId){
   const isEdit=!!evento;
-  const c=CONDOS[_agendaCondo]||{nome:_agendaCondo,cor:'#155B67'};
+  const cid = condoId || _agendaCondo;
+  const c=CONDOS[cid]||{nome:cid,cor:'#155B67'};
   const hoje=new Date().toISOString().slice(0,10);
   const ov=document.createElement('div');
   ov.className='modal-overlay';
@@ -500,14 +652,14 @@ function abrirModalEventoAdm(evento){
 
     <div style="display:flex;gap:8px">
       <button onclick="document.getElementById('evt-modal').remove()" style="flex:0 0 auto;padding:11px 18px;border:1.5px solid var(--gray3);background:#fff;color:var(--text2);border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Cancelar</button>
-      <button id="btn-salvar-evt" onclick="salvarEventoAdm('${evento?.id||''}')" style="flex:1;padding:11px;border:none;background:${c.cor};color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">${isEdit?'💾 Salvar alterações':'✓ Criar evento'}</button>
+      <button id="btn-salvar-evt" onclick="salvarEventoAdm('${evento?.id||''}','${cid}')" style="flex:1;padding:11px;border:none;background:${c.cor};color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">${isEdit?'💾 Salvar alterações':'✓ Criar evento'}</button>
     </div>
   </div>`;
   document.body.appendChild(ov);
   setTimeout(()=>document.getElementById('evt-titulo')?.focus(),100);
 }
 
-async function salvarEventoAdm(id){
+async function salvarEventoAdm(id, condoId){
   const data=document.getElementById('evt-data').value;
   const titulo=document.getElementById('evt-titulo').value.trim();
   const tipo=document.getElementById('evt-tipo').value;
@@ -517,7 +669,7 @@ async function salvarEventoAdm(id){
   const btn=document.getElementById('btn-salvar-evt');
   btn.disabled=true; btn.textContent='⏳ Salvando…';
   try{
-    let lista=_eventosCondo.slice();
+    let lista=(_eventosTodos[condoId]||[]).slice();
     if(id){
       const i=lista.findIndex(e=>e.id===id);
       if(i>=0){
@@ -527,9 +679,9 @@ async function salvarEventoAdm(id){
       lista.push({id:'evt_'+Date.now().toString(36),data,titulo,tipo,descricao,criadoEm:new Date().toISOString()});
     }
     lista.sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-    const {error}=await sb.from('app_config').upsert({key:'eventos_'+_agendaCondo,value:lista,updated_at:new Date().toISOString()},{onConflict:'key'});
+    const {error}=await sb.from('app_config').upsert({key:'eventos_'+condoId,value:lista,updated_at:new Date().toISOString()},{onConflict:'key'});
     if(error) throw error;
-    _eventosCondo=lista;
+    _eventosTodos[condoId]=lista;
     document.getElementById('evt-modal').remove();
     renderAgendaListaAdm();
   }catch(e){
@@ -538,15 +690,15 @@ async function salvarEventoAdm(id){
   }
 }
 
-async function removerEventoAdm(id){
-  const e=_eventosCondo.find(x=>x.id===id);
+async function removerEventoAdm(id, condoId){
+  const e=(_eventosTodos[condoId]||[]).find(x=>x.id===id);
   if(!e) return;
   if(!confirm('Remover o evento "'+e.titulo+'" do dia '+e.data+'?\n\nEsta ação não pode ser desfeita.')) return;
   try{
-    const lista=_eventosCondo.filter(x=>x.id!==id);
-    const {error}=await sb.from('app_config').upsert({key:'eventos_'+_agendaCondo,value:lista,updated_at:new Date().toISOString()},{onConflict:'key'});
+    const lista=(_eventosTodos[condoId]||[]).filter(x=>x.id!==id);
+    const {error}=await sb.from('app_config').upsert({key:'eventos_'+condoId,value:lista,updated_at:new Date().toISOString()},{onConflict:'key'});
     if(error) throw error;
-    _eventosCondo=lista;
+    _eventosTodos[condoId]=lista;
     renderAgendaListaAdm();
   }catch(e){ alert('Erro: '+e.message); }
 }
