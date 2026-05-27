@@ -562,7 +562,8 @@ function renderDemandas(){
             let extra='';
             if(sub==='reforma'){
               const tipos={'pisos-paredes':'Revestimentos','hidraulica':'Hidráulica','eletrica':'Elétrica','gas':'Gás','ar-condicionado':'Ar-condicionado','rebaixamento':'Rebaixamento de teto','bancadas':'Bancadas','tela-protecao':'Tela','contrapiso':'Contrapiso','outros':'Outros'};
-              if(det.tipo_servico) extra += `<div style="margin-top:3px"><b>Tipo:</b> ${tipos[det.tipo_servico]||det.tipo_servico}</div>`;
+              const listaTipos = Array.isArray(det.tipos_servico) ? det.tipos_servico : (det.tipo_servico?[det.tipo_servico]:[]);
+              if(listaTipos.length) extra += `<div style="margin-top:3px"><b>Serviços:</b> ${listaTipos.map(t=>tipos[t]||t).join(' · ')}</div>`;
               if(det.tem_rt){
                 extra += `<div><b>Já tem RT:</b> ${det.rt_nome||'(nome não informado)'} ${det.rt_registro?'· '+det.rt_registro:''}</div>`;
               } else {
