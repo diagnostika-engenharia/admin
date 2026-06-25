@@ -721,6 +721,41 @@ def gerar(input_json_path: Path, output_dir: Path, assets_dir: Path) -> Path:
     return output_path
 
 
+def upload_para_storage(resultado: Path, dados: dict):
+    """Tenta upload automático para Supabase Storage (silencioso se não configurado)."""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from storage.supabase_upload import upload_documento, registrar_no_catalogo
+    except ImportError:
+        return None
+
+    import os
+    if not os.environ.get("SUPABASE_SERVICE_KEY"):
+        print("[INFO] SUPABASE_SERVICE_KEY não definida — upload ao Storage pulado.")
+        return None
+
+    condominio = dados["cliente"]["nome_curto"]
+    tipo = dados["documento"]["tipo"]
+
+    result = upload_documento(resultado, condominio=condominio, tipo=tipo)
+    if result.get("ok"):
+        registrar_no_catalogo(
+            storage_path=result["storage_path"],
+            size=result["size"],
+            mime=result["mime"],
+            metadata={
+                "titulo": resultado.stem,
+                "condominio": condominio,
+                "tipo_documento": tipo,
+            },
+        )
+        print(f"[OK] Upload ao Storage: {result['storage_path']}")
+    else:
+        print(f"[AVISO] Upload falhou: {result.get('error', 'desconhecido')}")
+
+    return result
+
+
 def main():
     if len(sys.argv) < 2:
         print("Uso: python gerar_pt_ad.py <input.json>")
@@ -738,6 +773,10 @@ def main():
     resultado = gerar(input_path, output_dir, assets_dir)
     print(f"[OK] Documento gerado: {resultado}")
     print(f"     Tamanho: {resultado.stat().st_size / 1024:.1f} KB")
+
+    with open(input_path, "r", encoding="utf-8") as f:
+        dados = json.load(f)
+    upload_para_storage(resultado, dados)
 
 
 if __name__ == "__main__":
